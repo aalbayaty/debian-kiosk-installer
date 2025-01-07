@@ -60,8 +60,8 @@ cat > /home/kiosk/.config/openbox/autostart << EOF
 
 unclutter -idle 0.1 -grab -root &
 
-while :
-do
+while 
+:do
   xrandr --auto
   chromium \
     --no-first-run \
@@ -73,7 +73,7 @@ do
     --disable-save-password-bubble \
     --disable-session-crashed-bubble \
     --incognito \
-    --kiosk "https://neave.tv/"
+    --kiosk "https://muslimhub.net/public/location/ABC/?Settings=TV"
   sleep 5
 done &
 EOF
