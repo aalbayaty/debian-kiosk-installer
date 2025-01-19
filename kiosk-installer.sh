@@ -60,8 +60,8 @@ cat > /home/kiosk/.config/openbox/autostart << EOF
 
 unclutter -idle 0.1 -grab -root &
 
-while 
-:do
+while :
+do
   xrandr --auto
   chromium \
     --no-first-run \
