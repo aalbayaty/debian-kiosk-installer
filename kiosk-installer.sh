@@ -13,11 +13,11 @@ apt-get install \
     locales \
     -y
 
+timedatectl set-timezone America/Guyana
+  add-apt-repository multiverse
 
-# add-apt-repository multiverse
-
-# echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
-# apt-get install ttf-mscorefonts-installer -y
+  echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
+  apt-get install ttf-mscorefonts-installer -y
 
 # dir
 mkdir -p /home/kiosk/.config/openbox
@@ -59,10 +59,13 @@ cat > /home/kiosk/.config/openbox/autostart << EOF
 #!/bin/bash
 
 unclutter -idle 0.1 -grab -root &
-
+xrandr -o left
+xset -dpms
+xset s off
+xset s noblank
 while :
 do
-  xrandr --auto
+  
   chromium \
     --no-first-run \
     --start-maximized \
@@ -73,7 +76,7 @@ do
     --disable-save-password-bubble \
     --disable-session-crashed-bubble \
     --incognito \
-    --kiosk "https://muslimhub.net/public/location/ABC/?Settings=TV"
+    --kiosk "https://muslimhub.net/public/location/ICSWO/?Settings=TV"
   sleep 5
 done &
 EOF
