@@ -59,13 +59,14 @@ cat > /home/kiosk/.config/openbox/autostart << EOF
 #!/bin/bash
 
 unclutter -idle 0.1 -grab -root &
+
+while :
+do
+# xrandr -o left the screen will be to the left
 xrandr -o left
 xset -dpms
 xset s off
 xset s noblank
-while :
-do
-  
   chromium \
     --no-first-run \
     --start-maximized \
