@@ -13,7 +13,7 @@ apt-get install \
     locales \
     -y
 
-timedatectl set-timezone America/Guyana
+# timedatectl set-timezone America/Guyana
   add-apt-repository multiverse
 
   echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
