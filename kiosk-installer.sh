@@ -14,10 +14,10 @@ apt-get install \
     -y
 
 
-add-apt-repository multiverse
+# add-apt-repository multiverse
 
-echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
-apt-get install ttf-mscorefonts-installer -y
+# echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
+# apt-get install ttf-mscorefonts-installer -y
 
 # dir
 mkdir -p /home/kiosk/.config/openbox
