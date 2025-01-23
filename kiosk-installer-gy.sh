@@ -77,7 +77,7 @@ xset s noblank
     --disable-save-password-bubble \
     --disable-session-crashed-bubble \
     --incognito \
-    --kiosk "https://muslimhub.net/public/location/ICSWO/?Settings=TV"
+    --kiosk "https://muslimhub.net/public/location/Guyana331/?Settings=tv"
   sleep 5
 done &
 EOF
