@@ -1,50 +1,71 @@
+bash
 #!/bin/bash
 
-# Function to check for wired connection (eth0 or similar)
-check_wired_connection() {
-  echo "Checking for RJ45 wired connection..."
-  if ip link show | grep -q "eth0: <.*state UP.*>"; then
-    echo "Wired connection detected. Using RJ45."
-    dhclient eth0
-    exit 0
-  else
-    echo "No wired connection detected."
-  fi
-}
+# Wait for 10 seconds
+echo "Waiting for 10 seconds to change network settings..."
+sleep 10
 
-# Function to list available Wi-Fi networks
-list_wifi_networks() {
-  echo "Scanning for available Wi-Fi networks..."
-  nmcli device wifi list
-}
+# Prompt to change network settings
+read -p "Do you want to change network settings? (y/n) " -n 1 -r
+echo
 
-# Function to configure Wi-Fi
-configure_wifi() {
-  echo "Available Wi-Fi Networks:"
-  list_wifi_networks
-  
-  read -p "Enter the SSID: " ssid
-  read -p "Enter the password: " wifi_password
-  read -p "Enter security type (e.g., WPA-PSK, WPA2-PSK, NONE): " security_type
-  
-  echo "Connecting to $ssid with security $security_type..."
-  nmcli dev wifi connect "$ssid" password "$wifi_password" ifname wlan0
-}
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+  # Ask for network type
+  echo "Select network type:"
+  select network_type in "Wired (RJ45)" "Wireless (WiFi)"; do
+    if [ -n "$network_type" ]; then
+      if [ "$network_type" = "Wired (RJ45)" ]; then
+        # Detect wired network settings
+        echo "Detecting wired network settings..."
+        ip_address=$(dhclient -v eth0 | grep "bound to" | cut -d' ' -f2)
+        subnet_mask=$(ip addr show eth0 | grep "inet " | cut -d' ' -f2 | cut -d'/' -f2)
+        gateway=$(ip route show default | cut -d' ' -f3)
+        dns=$(cat /etc/resolv.conf | grep "nameserver" | cut -d' ' -f2)
 
-# Main script logic
-check_wired_connection
+        echo "IP Address: $ip_address"
+        echo "Subnet Mask: $subnet_mask"
+        echo "Gateway: $gateway"
+        echo "DNS: $dns"
 
-echo "Do you want to change Wi-Fi settings? (yes/no)"
-read -t 10 user_response
+      elif [ "$network_type" = "Wireless (WiFi)" ]; then
+        # List available WiFi networks
+        echo "Available WiFi networks:"
+        ssid_list=$(nmcli device wifi list | grep SSID)
+        select ssid in $ssid_list; do
+          if [ -n "$ssid" ]; then
+            # Ask for WiFi password
+            read -p "Enter password for $ssid: " password
 
-if [ "$user_response" == "yes" ]; then
-  configure_wifi
-else
-  echo "Proceeding with saved Wi-Fi settings..."
-  nmcli networking on
+            # Ask for WiFi security type
+            echo "Select WiFi security type:"
+            select security_type in "WPA2" "WPA" "WEP"; do
+              if [ -n "$security_type" ]; then
+                # Update WiFi settings using nmcli
+                nmcli con modify WiFi connection wifi.ssid "$ssid"
+                nmcli con modify WiFi connection wifi.psk "$password"
+                nmcli con modify WiFi connection wifi.security "$security_type"
+
+                break
+              else
+                echo "Invalid selection. Please try again."
+              fi
+            done
+
+            break
+          else
+            echo "Invalid selection. Please try again."
+          fi
+        done
+      fi
+
+      break
+    else
+      echo "Invalid selection. Please try again."
+    fi
+  done
 fi
 
-# Launch your kiosk application after network setup
-echo "Starting kiosk application..."
-# Replace with your application launch command
-sleep 2
+# Continue with the application
+echo "Starting application..."
+# Run your application command here
