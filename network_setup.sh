@@ -1,4 +1,4 @@
-bash
+
 #!/bin/bash
 
 # Wait for 10 seconds
