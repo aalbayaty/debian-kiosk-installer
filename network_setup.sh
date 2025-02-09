@@ -3,7 +3,7 @@
 # Function to get available SSIDs
 get_available_ssids() {
     echo "Scanning for available Wi-Fi networks..."
-    nmcli -t -f SSID dev wifi
+    nmcli -t -f SSID dev wifi | awk 'NF > 0' # Ensure no empty lines are listed
 }
 
 # Function to change Wi-Fi settings
@@ -25,36 +25,46 @@ change_wifi_settings() {
         return
     fi
 
-    read -p "Enter the password for $selected_ssid: " password
-    read -p "Enter the security type (e.g., WPA, WPA2): " security_type
+    read -s -p "Enter the password for $selected_ssid: " password
+    echo
+    read -p "Enter the security type (WPA/WPA2/None): " security_type
+
+    # Map security type to key management
+    case "$security_type" in
+        "WPA" | "WPA2") key_mgmt="wpa-psk" ;;
+        "None") key_mgmt="none" ;;
+        *) echo "Invalid security type." && return ;;
+    esac
 
     # Configure the new Wi-Fi connection
-    nmcli dev wifi connect "$selected_ssid" password "$password" wifi-sec.key-mgmt "$security_type"
-    echo "Connected to $selected_ssid."
+    nmcli dev wifi connect "$selected_ssid" password "$password" wifi-sec.key-mgmt "$key_mgmt"
+    if [ $? -eq 0 ]; then
+        echo "Connected to $selected_ssid."
+    else
+        echo "Failed to connect to $selected_ssid. Please check your password or security type."
+    fi
 }
 
 # Function to detect connection type
 detect_connection_type() {
-    connection_type=$(nmcli -t -f DEVICE,TYPE,STATE dev | grep -E 'ethernet|wifi' | grep 'connected')
-    if echo "$connection_type" | grep -q 'ethernet'; then
-        echo "RJ45"
-    elif echo "$connection_type" | grep -q 'wifi'; then
-        echo "Wi-Fi"
-    else
-        echo "Unknown"
-    fi
+    connection_type=$(nmcli -t -f TYPE,STATE dev | grep 'connected' | awk -F':' '{print $1}' | head -n 1)
+    case "$connection_type" in
+        "ethernet") echo "RJ45" ;;
+        "wifi") echo "Wi-Fi" ;;
+        *) echo "Unknown" ;;
+    esac
 }
 
 # Function to detect wired (RJ45) connection details
 detect_wired_connection() {
     echo "Detecting wired (RJ45) connection details..."
-    ip_addr=$(ip -o -4 addr show | awk '{print $4}')
+    ip_addr=$(ip -o -4 addr show eth0 | awk '{print $4}')
     gateway=$(ip route | grep default | awk '{print $3}')
     dns=$(grep nameserver /etc/resolv.conf | awk '{print $2}')
 
-    echo "IP Address: $ip_addr"
-    echo "Gateway: $gateway"
-    echo "DNS: $dns"
+    echo "IP Address: ${ip_addr:-Not Found}"
+    echo "Gateway: ${gateway:-Not Found}"
+    echo "DNS: ${dns:-Not Found}"
 }
 
 # Main function
