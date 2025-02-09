@@ -1,64 +1,89 @@
 #!/bin/bash
 
-# Ensure NetworkManager is installed
-if ! command -v nmcli &> /dev/null; then
-  echo "NetworkManager (nmcli) is required. Installing now..."
-  sudo apt update && sudo apt install -y network-manager
-fi
+# Function to get available SSIDs
+get_available_ssids() {
+    echo "Scanning for available Wi-Fi networks..."
+    nmcli -t -f SSID dev wifi
+}
 
-# Initial delay with prompt
-echo "Waiting for 10 seconds... Press 'Y' to change Wi-Fi settings. Otherwise, the kiosk will start automatically."
-read -t 10 -n 1 -r user_input
+# Function to change Wi-Fi settings
+change_wifi_settings() {
+    ssids=$(get_available_ssids)
+    if [ -z "$ssids" ]; then
+        echo "No SSIDs found."
+        return
+    fi
 
-# Check if RJ45 (Ethernet) connection is active
-wired_connection=$(nmcli device status | grep ethernet | grep connected)
+    echo "Available SSIDs:"
+    echo "$ssids" | nl
 
-if [ "$wired_connection" ]; then
-  echo "Wired connection detected. Using it by default."
-else
-  echo "No wired connection detected. Checking Wi-Fi settings..."
-fi
+    read -p "Select the SSID number you want to connect to: " choice
+    selected_ssid=$(echo "$ssids" | sed -n "${choice}p")
 
-# If user pressed 'Y' or 'y', proceed to configure Wi-Fi
-if [[ $user_input == [Yy] ]]; then
-  echo "Scanning for available Wi-Fi networks..."
-  nmcli device wifi rescan
-  sleep 2
-  echo "Available Wi-Fi Networks:"
-  nmcli device wifi list
+    if [ -z "$selected_ssid" ]; then
+        echo "Invalid selection."
+        return
+    fi
 
-  # Ask for the Wi-Fi SSID
-  echo "Enter the SSID you want to connect to:"
-  read ssid
+    read -p "Enter the password for $selected_ssid: " password
+    read -p "Enter the security type (e.g., WPA, WPA2): " security_type
 
-  # Ask for the Wi-Fi password
-  echo "Enter the Wi-Fi password:"
-  read -s password
+    # Configure the new Wi-Fi connection
+    nmcli dev wifi connect "$selected_ssid" password "$password" wifi-sec.key-mgmt "$security_type"
+    echo "Connected to $selected_ssid."
+}
 
-  # Ask for the Security Type
-  echo "Select Security Type (WPA, WPA2, WEP, or leave empty for open):"
-  read security_type
+# Function to detect connection type
+detect_connection_type() {
+    connection_type=$(nmcli -t -f DEVICE,TYPE,STATE dev | grep -E 'ethernet|wifi' | grep 'connected')
+    if echo "$connection_type" | grep -q 'ethernet'; then
+        echo "RJ45"
+    elif echo "$connection_type" | grep -q 'wifi'; then
+        echo "Wi-Fi"
+    else
+        echo "Unknown"
+    fi
+}
 
-  # Connect to the chosen Wi-Fi network
-  echo "Attempting to connect to $ssid..."
-  if [[ -z $security_type ]]; then
-    nmcli dev wifi connect "$ssid" password "$password" ifname wlan0
-  else
-    nmcli dev wifi connect "$ssid" password "$password" ifname wlan0 --security "$security_type"
-  fi
+# Function to detect wired (RJ45) connection details
+detect_wired_connection() {
+    echo "Detecting wired (RJ45) connection details..."
+    ip_addr=$(ip -o -4 addr show | awk '{print $4}')
+    gateway=$(ip route | grep default | awk '{print $3}')
+    dns=$(grep nameserver /etc/resolv.conf | awk '{print $2}')
 
-  if [ $? -eq 0 ]; then
-    echo "Connected successfully to $ssid!"
-  else
-    echo "Failed to connect. Please check the SSID, password, or security type."
-    exit 1
-  fi
-else
-  echo "Proceeding with saved network configuration..."
-fi
+    echo "IP Address: $ip_addr"
+    echo "Gateway: $gateway"
+    echo "DNS: $dns"
+}
 
-# Start your kiosk application
-echo "Starting kiosk application..."
-/path/to/your/application &
+# Main function
+main() {
+    echo "Waiting for 10 seconds... Press 'y' if you want to change Wi-Fi settings."
+    sleep 10
 
-exit 0
+    # Detect connection type
+    connection_type=$(detect_connection_type)
+    echo "Detected connection type: $connection_type"
+
+    if [ "$connection_type" == "Wi-Fi" ]; then
+        read -p "Do you want to change Wi-Fi settings? (y/n): " user_input
+        if [ "$user_input" == "y" ]; then
+            change_wifi_settings
+        else
+            echo "Using saved Wi-Fi settings."
+        fi
+    elif [ "$connection_type" == "RJ45" ]; then
+        echo "Wired (RJ45) connection detected."
+        detect_wired_connection
+    else
+        echo "Unknown connection type. Please check your network settings."
+    fi
+
+    # Continue with the application
+    echo "Starting the application..."
+    # Add your application logic here
+}
+
+# Run the main function
+main
