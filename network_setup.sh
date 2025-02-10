@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Ensure nmcli is available
+if ! command -v nmcli &> /dev/null; then
+    echo "Error: nmcli is not installed. Please install it to use this script."
+    exit 1
+fi
+
 # Function to get available SSIDs
 get_available_ssids() {
     echo "Scanning for available Wi-Fi networks..."
@@ -18,30 +24,22 @@ change_wifi_settings() {
     echo "$ssids" | nl
 
     read -p "Select the SSID number you want to connect to: " choice
-    selected_ssid=$(echo "$ssids" | sed -n "${choice}p")
-
-    if [ -z "$selected_ssid" ]; then
-        echo "Invalid selection."
+    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "$(echo "$ssids" | wc -l)" ]; then
+        echo "Invalid selection. Please enter a valid number."
         return
     fi
 
+    selected_ssid=$(echo "$ssids" | sed -n "${choice}p")
+
     read -s -p "Enter the password for $selected_ssid: " password
     echo
-    read -p "Enter the security type (WPA/WPA2/None): " security_type
 
-    # Map security type to key management
-    case "$security_type" in
-        "WPA" | "WPA2") key_mgmt="wpa-psk" ;;
-        "None") key_mgmt="none" ;;
-        *) echo "Invalid security type." && return ;;
-    esac
-
-    # Configure the new Wi-Fi connection
-    nmcli dev wifi connect "$selected_ssid" password "$password" wifi-sec.key-mgmt "$key_mgmt"
+    # Attempt connection without asking for security type
+    nmcli dev wifi connect "$selected_ssid" password "$password"
     if [ $? -eq 0 ]; then
         echo "Connected to $selected_ssid."
     else
-        echo "Failed to connect to $selected_ssid. Please check your password or security type."
+        echo "Failed to connect to $selected_ssid. Please check your password."
     fi
 }
 
@@ -58,26 +56,25 @@ detect_connection_type() {
 # Function to detect wired (RJ45) connection details
 detect_wired_connection() {
     echo "Detecting wired (RJ45) connection details..."
-    ip_addr=$(ip -o -4 addr show eth0 | awk '{print $4}')
+    ip_addr=$(ip -o -4 addr show | grep -m 1 -E 'en|eth|wlan' | awk '{print $4}')
     gateway=$(ip route | grep default | awk '{print $3}')
     dns=$(grep nameserver /etc/resolv.conf | awk '{print $2}')
 
-    echo "IP Address: ${ip_addr:-Not Found}"
-    echo "Gateway: ${gateway:-Not Found}"
-    echo "DNS: ${dns:-Not Found}"
+    echo "IP Address: ${ip_addr:-Not available}"
+    echo "Gateway: ${gateway:-Not available}"
+    echo "DNS Servers: ${dns:-Not available}"
 }
 
 # Main function
 main() {
     echo "Waiting for 10 seconds... Press 'y' if you want to change Wi-Fi settings."
-    sleep 10
+    read -t 10 -p "Press 'y' to change Wi-Fi settings (or wait to continue): " user_input
 
     # Detect connection type
     connection_type=$(detect_connection_type)
     echo "Detected connection type: $connection_type"
 
     if [ "$connection_type" == "Wi-Fi" ]; then
-        read -p "Do you want to change Wi-Fi settings? (y/n): " user_input
         if [ "$user_input" == "y" ]; then
             change_wifi_settings
         else
