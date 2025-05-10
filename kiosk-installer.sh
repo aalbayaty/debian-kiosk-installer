@@ -78,7 +78,7 @@ xset s noblank
     --disable-suggestions-service \
     --disable-save-password-bubble \
     --disable-session-crashed-bubble \
-    --autoplay-policy=no-user-gesture-required
+    --autoplay-policy=no-user-gesture-required \
     --incognito \
     --kiosk "https://muslimhub.net/public/location/ICSWO/?Settings=tv"
   sleep 5
