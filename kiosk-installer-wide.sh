@@ -63,9 +63,9 @@ unclutter -idle 0.1 -grab -root &
 while :
 do
 # the screen will be to the left
- xrandr -o left 
+# xrandr -o left 
 # the screen will be Normal
-# xrandr --auto
+  xrandr --auto
 xset -dpms
 xset s off
 xset s noblank
