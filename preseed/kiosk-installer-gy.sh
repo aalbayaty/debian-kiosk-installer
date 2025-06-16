@@ -15,6 +15,7 @@ EOF
 
 # create config
 if [ -e "/target/etc/lightdm/lightdm.conf" ]; then
+  mkdir -p /target/etc/lightdm
   mv /target/etc/lightdm/lightdm.conf /etc/lightdm/lightdm.conf.backup
 fi
 cat > /target/etc/lightdm/lightdm.conf << EOF
