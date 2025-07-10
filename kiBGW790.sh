@@ -20,10 +20,10 @@ timedatectl set-timezone Asia/Baghdad
  # echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
  # apt-get install ttf-mscorefonts-installer -y
 
- echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" |  debconf-set-selections
- apt-get install -y ttf-mscorefonts-installer
+ # echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" |  debconf-set-selections
+ # apt-get install -y ttf-mscorefonts-installer
 
-
+ apt install fonts-amiri fonts-playfair-display fonts-scheherazade-new
 
 
 # dir
