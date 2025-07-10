@@ -23,7 +23,40 @@ timedatectl set-timezone Asia/Baghdad
  # echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" |  debconf-set-selections
  # apt-get install -y ttf-mscorefonts-installer
 
- apt install fonts-amiri fonts-playfair-display fonts-scheherazade-new
+set -e
+
+# Create temp folder
+FONT_DIR="/usr/local/share/fonts/googlefonts"
+TEMP_DIR="/tmp/googlefonts"
+mkdir -p "$TEMP_DIR"
+mkdir -p "$FONT_DIR"
+
+# Download font ZIP files
+echo "Downloading fonts..."
+cd "$TEMP_DIR"
+
+wget -q https://fonts.google.com/download?family=Amiri -O Amiri.zip
+wget -q "https://fonts.google.com/download?family=Playfair+Display" -O PlayfairDisplay.zip
+
+# Extract TTF files only
+echo "Extracting fonts..."
+unzip -o Amiri.zip "*.ttf" -d "$TEMP_DIR/Amiri"
+unzip -o PlayfairDisplay.zip "*.ttf" -d "$TEMP_DIR/PlayfairDisplay"
+
+# Copy fonts to system folder
+echo "Installing fonts..."
+cp "$TEMP_DIR/Amiri/"*.ttf "$FONT_DIR/"
+cp "$TEMP_DIR/PlayfairDisplay/"*.ttf "$FONT_DIR/"
+
+# Set correct permissions
+chmod 644 "$FONT_DIR/"*.ttf
+
+# Update font cache
+echo "Updating font cache..."
+fc-cache -fv
+
+# Done
+echo "Fonts installed successfully!"
 
 
 # dir
