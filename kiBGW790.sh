@@ -102,22 +102,35 @@ unclutter -idle 0.1 -grab -root &
 
 while :
 do
-# xrandr -o left the screen will be to the left
+# Rotate screen
 xrandr -o left
+
+# Disable power saving & screen blanking
 xset -dpms
 xset s off
 xset s noblank
-  chromium \
-    --no-first-run \
-    --start-maximized \
-    --disable \
-    --disable-translate \
-    --disable-infobars \
-    --disable-suggestions-service \
-    --disable-save-password-bubble \
-    --disable-session-crashed-bubble \
-    --incognito \
-    --kiosk "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
+
+
+
+# Create kiosk Firefox profile (first time only)
+mkdir -p "$HOME/.mozilla/firefox/kiosk-profile"
+cat > "$HOME/.mozilla/firefox/kiosk-profile/user.js" <<EOF
+user_pref("browser.shell.checkDefaultBrowser", false);
+user_pref("browser.sessionstore.resume_session_once", false);
+user_pref("browser.sessionstore.resume_from_crash", false);
+user_pref("browser.tabs.warnOnClose", false);
+user_pref("browser.warnOnQuit", false);
+user_pref("signon.rememberSignons", false);
+user_pref("datareporting.policy.dataSubmissionEnabled", false);
+EOF
+
+# Start Firefox in kiosk mode
+firefox \
+  --no-remote \
+  --kiosk \
+  --private-window \
+  --profile "$HOME/.mozilla/firefox/kiosk-profile" \
+  "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
   sleep 5
 done &
 EOF
