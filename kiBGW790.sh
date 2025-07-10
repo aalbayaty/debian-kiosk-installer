@@ -1,100 +1,84 @@
 #!/bin/bash
 
-# be new
+# Update system
 apt-get update
 
-# get software
+# Install necessary software
 apt-get install \
-	unclutter \
+    unclutter \
     xorg \
-    chromium \
+    firefox-esr \
     openbox \
     lightdm \
     locales \
+    wget \
+    unzip \
     -y
 
-# timedatectl set-timezone America/Guyana
+# Set timezone
 timedatectl set-timezone Asia/Baghdad
-  add-apt-repository multiverse
 
- # echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
- # apt-get install ttf-mscorefonts-installer -y
-
- # echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" |  debconf-set-selections
- # apt-get install -y ttf-mscorefonts-installer
-
+# Set up Google Fonts
 set -e
 
-# Create temp folder
 FONT_DIR="/usr/local/share/fonts/googlefonts"
 TEMP_DIR="/tmp/googlefonts"
 mkdir -p "$TEMP_DIR"
 mkdir -p "$FONT_DIR"
 
-# Download font ZIP files
 echo "Downloading fonts..."
 cd "$TEMP_DIR"
-
 wget -q https://fonts.google.com/download?family=Amiri -O Amiri.zip
 wget -q "https://fonts.google.com/download?family=Playfair+Display" -O PlayfairDisplay.zip
 
-# Extract TTF files only
 echo "Extracting fonts..."
 unzip -o Amiri.zip "*.ttf" -d "$TEMP_DIR/Amiri"
 unzip -o PlayfairDisplay.zip "*.ttf" -d "$TEMP_DIR/PlayfairDisplay"
 
-# Copy fonts to system folder
 echo "Installing fonts..."
 cp "$TEMP_DIR/Amiri/"*.ttf "$FONT_DIR/"
 cp "$TEMP_DIR/PlayfairDisplay/"*.ttf "$FONT_DIR/"
-
-# Set correct permissions
 chmod 644 "$FONT_DIR/"*.ttf
 
-# Update font cache
 echo "Updating font cache..."
 fc-cache -fv
-
-# Done
 echo "Fonts installed successfully!"
 
-
-# dir
+# Setup Openbox for kiosk
 mkdir -p /home/kiosk/.config/openbox
 
-# create group
+# Create group and user
 groupadd kiosk
-
-# create user if not exists
 id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash 
-
-# rights
 chown -R kiosk:kiosk /home/kiosk
 
-# remove virtual consoles
+# Disable virtual console switching
 if [ -e "/etc/X11/xorg.conf" ]; then
   mv /etc/X11/xorg.conf /etc/X11/xorg.conf.backup
 fi
+
 cat > /etc/X11/xorg.conf << EOF
 Section "ServerFlags"
     Option "DontVTSwitch" "true"
 EndSection
 EOF
 
-# create config
+# Configure LightDM for autologin
 if [ -e "/etc/lightdm/lightdm.conf" ]; then
   mv /etc/lightdm/lightdm.conf /etc/lightdm/lightdm.conf.backup
 fi
+
 cat > /etc/lightdm/lightdm.conf << EOF
 [SeatDefaults]
 autologin-user=kiosk
 user-session=openbox
 EOF
 
-# create autostart
+# Create Openbox autostart file
 if [ -e "/home/kiosk/.config/openbox/autostart" ]; then
   mv /home/kiosk/.config/openbox/autostart /home/kiosk/.config/openbox/autostart.backup
 fi
+
 cat > /home/kiosk/.config/openbox/autostart << EOF
 #!/bin/bash
 
@@ -102,37 +86,22 @@ unclutter -idle 0.1 -grab -root &
 
 while :
 do
-# Rotate screen
-xrandr -o left
+  xrandr -o left
+  xset -dpms
+  xset s off
+  xset s noblank
 
-# Disable power saving & screen blanking
-xset -dpms
-xset s off
-xset s noblank
+  firefox-esr \
+    --kiosk "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv" \
+    --private-window \
+    --no-remote
 
-
-
-# Create kiosk Firefox profile (first time only)
-mkdir -p "$HOME/.mozilla/firefox/kiosk-profile"
-cat > "$HOME/.mozilla/firefox/kiosk-profile/user.js" <<EOF
-user_pref("browser.shell.checkDefaultBrowser", false);
-user_pref("browser.sessionstore.resume_session_once", false);
-user_pref("browser.sessionstore.resume_from_crash", false);
-user_pref("browser.tabs.warnOnClose", false);
-user_pref("browser.warnOnQuit", false);
-user_pref("signon.rememberSignons", false);
-user_pref("datareporting.policy.dataSubmissionEnabled", false);
-EOF
-
-# Start Firefox in kiosk mode
-firefox \
-  --no-remote \
-  --kiosk \
-  --private-window \
-  --profile "$HOME/.mozilla/firefox/kiosk-profile" \
-  "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
   sleep 5
 done &
 EOF
+
+# Set permissions
+chown kiosk:kiosk /home/kiosk/.config/openbox/autostart
+chmod +x /home/kiosk/.config/openbox/autostart
 
 echo "Done!"
