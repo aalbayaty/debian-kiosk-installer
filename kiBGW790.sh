@@ -1,84 +1,99 @@
 #!/bin/bash
 
-# Update system
+# be new
 apt-get update
 
-# Install necessary software
+# get software
 apt-get install \
-    unclutter \
+	unclutter \
     xorg \
-    firefox-esr \
+    chromium \
     openbox \
     lightdm \
     locales \
-    wget \
-    unzip \
     -y
 
-# Set timezone
+# timedatectl set-timezone America/Guyana
 timedatectl set-timezone Asia/Baghdad
+  add-apt-repository multiverse
 
-# Set up Google Fonts
+ # echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
+ # apt-get install ttf-mscorefonts-installer -y
+
+ # echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" |  debconf-set-selections
+ # apt-get install -y ttf-mscorefonts-installer
+
 set -e
 
-FONT_DIR="/usr/local/share/fonts/googlefonts"
-TEMP_DIR="/tmp/googlefonts"
-mkdir -p "$TEMP_DIR"
+
+# Define font directory
+FONT_DIR="$HOME/.fonts/amiri"
+
+# Create font directory if it doesn't exist
 mkdir -p "$FONT_DIR"
 
-echo "Downloading fonts..."
-cd "$TEMP_DIR"
-wget -q https://fonts.google.com/download?family=Amiri -O Amiri.zip
-wget -q "https://fonts.google.com/download?family=Playfair+Display" -O PlayfairDisplay.zip
+# Download and extract Amiri font
+# (Replace with actual download URL if needed)
+# You might need to adapt this part based on how you download the font.
+# Example using curl:
+# curl -L "https://example.com/amiri.zip" -o "$FONT_DIR/amiri.zip"
+# unzip "$FONT_DIR/amiri.zip" -d "$FONT_DIR"
 
-echo "Extracting fonts..."
-unzip -o Amiri.zip "*.ttf" -d "$TEMP_DIR/Amiri"
-unzip -o PlayfairDisplay.zip "*.ttf" -d "$TEMP_DIR/PlayfairDisplay"
+# Alternatively, use wget if curl is not available
+wget -O "$FONT_DIR/amiri.zip" "https://github.com/googlefonts/amiri/archive/refs/heads/main.zip"
+unzip "$FONT_DIR/amiri.zip" -d "$FONT_DIR"
 
-echo "Installing fonts..."
-cp "$TEMP_DIR/Amiri/"*.ttf "$FONT_DIR/"
-cp "$TEMP_DIR/PlayfairDisplay/"*.ttf "$FONT_DIR/"
-chmod 644 "$FONT_DIR/"*.ttf
+# Remove the zip file after extraction
+rm "$FONT_DIR/amiri.zip"
 
-echo "Updating font cache..."
+# Move extracted files to system font directory
+ cp "$FONT_DIR"/*.ttf /usr/share/fonts/truetype/
+cp "$FONT_DIR"/*.otf /usr/share/fonts/truetype/
+
+# Refresh font cache
 fc-cache -fv
+   
+
+# Done
 echo "Fonts installed successfully!"
 
-# Setup Openbox for kiosk
+
+# dir
 mkdir -p /home/kiosk/.config/openbox
 
-# Create group and user
+# create group
 groupadd kiosk
+
+# create user if not exists
 id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash 
+
+# rights
 chown -R kiosk:kiosk /home/kiosk
 
-# Disable virtual console switching
+# remove virtual consoles
 if [ -e "/etc/X11/xorg.conf" ]; then
   mv /etc/X11/xorg.conf /etc/X11/xorg.conf.backup
 fi
-
 cat > /etc/X11/xorg.conf << EOF
 Section "ServerFlags"
     Option "DontVTSwitch" "true"
 EndSection
 EOF
 
-# Configure LightDM for autologin
+# create config
 if [ -e "/etc/lightdm/lightdm.conf" ]; then
   mv /etc/lightdm/lightdm.conf /etc/lightdm/lightdm.conf.backup
 fi
-
 cat > /etc/lightdm/lightdm.conf << EOF
 [SeatDefaults]
 autologin-user=kiosk
 user-session=openbox
 EOF
 
-# Create Openbox autostart file
+# create autostart
 if [ -e "/home/kiosk/.config/openbox/autostart" ]; then
   mv /home/kiosk/.config/openbox/autostart /home/kiosk/.config/openbox/autostart.backup
 fi
-
 cat > /home/kiosk/.config/openbox/autostart << EOF
 #!/bin/bash
 
@@ -86,22 +101,23 @@ unclutter -idle 0.1 -grab -root &
 
 while :
 do
-  xrandr -o left
-  xset -dpms
-  xset s off
-  xset s noblank
-
-  firefox-esr \
-    --kiosk "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv" \
-    --private-window \
-    --no-remote
-
+# xrandr -o left the screen will be to the left
+xrandr -o left
+xset -dpms
+xset s off
+xset s noblank
+  chromium \
+    --no-first-run \
+    --start-maximized \
+    --disable \
+    --disable-translate \
+    --disable-infobars \
+    --disable-suggestions-service \
+    --disable-save-password-bubble \
+    --disable-session-crashed-bubble \
+    --incognito \
+    --kiosk "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
   sleep 5
 done &
 EOF
-
-# Set permissions
-chown kiosk:kiosk /home/kiosk/.config/openbox/autostart
-chmod +x /home/kiosk/.config/openbox/autostart
-
 echo "Done!"
