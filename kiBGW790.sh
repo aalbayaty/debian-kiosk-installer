@@ -14,49 +14,34 @@ apt-get install \
     -y
 
 # timedatectl set-timezone America/Guyana
-timedatectl set-timezone Asia/Baghdad
-  add-apt-repository multiverse
+ timedatectl set-timezone Asia/Baghdad
+ 
+ # install fonts
+ 
+apt-get install -y wget cabextract fontconfig
 
- # echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
- # apt-get install ttf-mscorefonts-installer -y
+# intiate a folde
+mkdir -p /usr/share/fonts/truetype/msttcorefonts
+cd /usr/share/fonts/truetype/msttcorefonts
 
- # echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" |  debconf-set-selections
- # apt-get install -y ttf-mscorefonts-installer
+# uploading fonts 
+wget -O times32.exe https://downloads.sourceforge.net/corefonts/times32.exe
+wget -O arial32.exe https://downloads.sourceforge.net/corefonts/arial32.exe
+ 
 
-set -e
+# get the fonts
+cabextract -L -F '*.ttf' arial32.exe
+cabextract -L -F '*.ttf' times32.exe
+ 
 
+# checking
+chmod 644 *.ttf
 
-# Define font directory
-FONT_DIR="$HOME/.fonts/amiri"
-
-# Create font directory if it doesn't exist
-mkdir -p "$FONT_DIR"
-
-# Download and extract Amiri font
-# (Replace with actual download URL if needed)
-# You might need to adapt this part based on how you download the font.
-# Example using curl:
-# curl -L "https://example.com/amiri.zip" -o "$FONT_DIR/amiri.zip"
-# unzip "$FONT_DIR/amiri.zip" -d "$FONT_DIR"
-
-# Alternatively, use wget if curl is not available
-wget -O "$FONT_DIR/amiri.zip" "https://github.com/googlefonts/amiri/archive/refs/heads/main.zip"
-unzip "$FONT_DIR/amiri.zip" -d "$FONT_DIR"
-
-# Remove the zip file after extraction
-rm "$FONT_DIR/amiri.zip"
-
-# Move extracted files to system font directory
- cp "$FONT_DIR"/*.ttf /usr/share/fonts/truetype/
-cp "$FONT_DIR"/*.otf /usr/share/fonts/truetype/
-
-# Refresh font cache
+# updating
 fc-cache -fv
-   
 
-# Done
-echo "Fonts installed successfully!"
-
+echo "New fonts are added"
+ 
 
 # dir
 mkdir -p /home/kiosk/.config/openbox
@@ -101,8 +86,10 @@ unclutter -idle 0.1 -grab -root &
 
 while :
 do
-# xrandr -o left the screen will be to the left
-xrandr -o left
+# the screen will be to the left
+ xrandr -o left 
+# the screen will be Normal
+# xrandr --auto
 xset -dpms
 xset s off
 xset s noblank
@@ -115,9 +102,11 @@ xset s noblank
     --disable-suggestions-service \
     --disable-save-password-bubble \
     --disable-session-crashed-bubble \
+    --autoplay-policy=no-user-gesture-required \
     --incognito \
-    --kiosk "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
+    --kiosk "https://muslimhub.net/public/location/wideathan/hyatt/?Settings=TVPrayerHall"
   sleep 5
 done &
 EOF
+
 echo "Done!"
