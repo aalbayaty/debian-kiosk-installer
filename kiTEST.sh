@@ -7,7 +7,7 @@ apt-get update
 apt-get install -y \
     unclutter \
     xorg \
-    chromium \
+    firefox-esr \
     openbox \
     lightdm \
     locales \
@@ -73,7 +73,7 @@ autologin-user=kiosk
 user-session=openbox
 EOF
 
-# إعداد autostart لتشغيل Chromium في kiosk mode
+# إعداد autostart لتشغيل Firefox في kiosk mode
 if [ -e "/home/kiosk/.config/openbox/autostart" ]; then
   mv /home/kiosk/.config/openbox/autostart /home/kiosk/.config/openbox/autostart.backup
 fi
@@ -94,24 +94,17 @@ do
   export LANGUAGE=ar_IQ:ar
   export LC_ALL=ar_IQ.UTF-8
 
-  chromium \
-    --no-first-run \
+  firefox-esr \
     --kiosk \
+    --private-window \
     --lang=ar-IQ \
-    --disable-translate \
-    --disable-infobars \
-    --disable-suggestions-service \
-    --disable-save-password-bubble \
-    --disable-session-crashed-bubble \
-    --autoplay-policy=no-user-gesture-required \
-    --incognito \
     "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
 
   sleep 5
 done &
 EOF
 
-# تعديل الملكية للملفات النهائية
+# تعديل ملكية الملفات النهائية
 chown -R kiosk:kiosk /home/kiosk
 
-echo "✅ تم الانتهاء من إعداد Kiosk بالكامل!"
+echo "✅ تم الانتهاء من إعداد Kiosk باستخدام Firefox!"
