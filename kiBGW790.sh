@@ -104,7 +104,7 @@ xset s noblank
     --disable-session-crashed-bubble \
     --autoplay-policy=no-user-gesture-required \
     --incognito \
-    --kiosk "https://muslimhub.net/public/location/wideathan/hyatt/?Settings=TVPrayerHall"
+    --kiosk "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
   sleep 5
 done &
 EOF
