@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# تحديث الحزم وتثبيت البرامج المطلوبة
+# ✅ تحديث النظام وتثبيت الحزم الأساسية
 apt-get update
-
 apt-get install -y \
   unclutter \
   xorg \
@@ -16,15 +15,18 @@ apt-get install -y \
   xfonts-utils \
   sudo
 
-# تعيين المنطقة الزمنية واللغة
-timedatectl set-timezone Asia/Baghdad
-locale-gen ar_IQ.UTF-8
+# ✅ تفعيل اللغة العربية - العراق في glibc
+sed -i '/^# *ar_IQ.UTF-8 UTF-8/s/^# *//' /etc/locale.gen
+locale-gen
 update-locale LANG=ar_IQ.UTF-8
 export LANG=ar_IQ.UTF-8
 export LANGUAGE=ar_IQ:ar
 export LC_ALL=ar_IQ.UTF-8
 
-# تثبيت خطوط Microsoft
+# ✅ تعيين المنطقة الزمنية
+timedatectl set-timezone Asia/Baghdad
+
+# ✅ تثبيت خطوط Microsoft Arial و Times
 mkdir -p /usr/share/fonts/truetype/msttcorefonts
 cd /usr/share/fonts/truetype/msttcorefonts
 wget -O arial32.exe https://downloads.sourceforge.net/corefonts/arial32.exe
@@ -33,49 +35,43 @@ cabextract -L -F '*.ttf' arial32.exe
 cabextract -L -F '*.ttf' times32.exe
 chmod 644 *.ttf
 fc-cache -fv
+echo "✅ تم تثبيت خطوط Microsoft (Arial, Times)"
 
-echo "✅ تم تثبيت خطوط Microsoft (بما فيها Arial) بنجاح"
-
-# إنشاء مستخدم kiosk إن لم يكن موجود
+# ✅ إنشاء مستخدم kiosk إذا لم يكن موجود
 groupadd -f kiosk
 id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash
 chown -R kiosk:kiosk /home/kiosk
 
-# إعداد مجلد Openbox
-mkdir -p /home/kiosk/.config/openbox
-
-# إعداد xorg لمنع تبديل الشاشات
+# ✅ تعطيل تبديل الشاشات في X11
 cat > /etc/X11/xorg.conf << EOF
 Section "ServerFlags"
     Option "DontVTSwitch" "true"
 EndSection
 EOF
 
-# إعداد autologin لـ kiosk
+# ✅ إعداد LightDM لتسجيل دخول تلقائي بـ Openbox
 cat > /etc/lightdm/lightdm.conf << EOF
 [Seat:*]
 autologin-user=kiosk
 user-session=openbox
 EOF
 
-# إعداد ملف autostart لتشغيل Firefox Kiosk
+# ✅ مجلد autostart لـ Openbox
+mkdir -p /home/kiosk/.config/openbox
 cat > /home/kiosk/.config/openbox/autostart << 'EOF'
 #!/bin/bash
 
 unclutter -idle 0.1 -grab -root &
 
-# إعداد الشاشة
 xrandr -o left
 xset -dpms
 xset s off
 xset s noblank
 
-# إعداد اللغة
 export LANG=ar_IQ.UTF-8
 export LANGUAGE=ar_IQ:ar
 export LC_ALL=ar_IQ.UTF-8
 
-# تشغيل Firefox مع ملف التعريف الخاص
 firefox-esr \
   --kiosk \
   --private-window \
@@ -88,11 +84,10 @@ EOF
 chmod +x /home/kiosk/.config/openbox/autostart
 chown -R kiosk:kiosk /home/kiosk
 
-# إنشاء ملف تعريف Firefox kiosk
-sudo -u kiosk firefox-esr -CreateProfile "kiosk-profile /home/kiosk/.mozilla/kiosk-profile"
+# ✅ إنشاء بروفايل مخصص لـ Firefox kiosk
+-u kiosk firefox-esr -CreateProfile "kiosk-profile /home/kiosk/.mozilla/kiosk-profile"
 
-# إعدادات لمنع النوافذ المزعجة داخل Firefox
-mkdir -p /home/kiosk/.mozilla/kiosk-profile
+# ✅ إعدادات Firefox لمنع التحقق والنوافذ المزعجة
 cat > /home/kiosk/.mozilla/kiosk-profile/user.js << EOF
 user_pref("browser.shell.checkDefaultBrowser", false);
 user_pref("app.update.enabled", false);
@@ -105,4 +100,4 @@ EOF
 
 chown -R kiosk:kiosk /home/kiosk/.mozilla
 
-echo "✅ تم الانتهاء من إعداد Kiosk باستخدام Firefox بدون تحقق أو نوافذ مزعجة!"
+echo "✅ تم الانتهاء من إعداد kiosk بنجاح باستخدام Firefox!"
