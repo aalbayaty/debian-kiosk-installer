@@ -36,34 +36,35 @@ groupadd -f kiosk
 id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash
 chown -R kiosk:kiosk /home/kiosk
 
-# ✅ إعداد Arial كخط افتراضي باستخدام fontconfig
-runuser -u kiosk -- mkdir -p /home/kiosk/.config/fontconfig
+# ✅ إعداد Arial كخط افتراضي للنظام بالكامل
+mkdir -p /etc/fonts/conf.d
 
-cat > /home/kiosk/.config/fontconfig/fonts.conf << EOF
+cat > /etc/fonts/conf.d/99-arial-default.conf << EOF
 <?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
 <fontconfig>
-  <!-- اجعل Arial هو الخط الأول للـ sans-serif -->
-  <match target="pattern">
-    <test name="family">
-      <string>sans-serif</string>
-    </test>
-    <edit name="family" mode="prepend" binding="strong">
-      <string>Arial</string>
-    </edit>
-  </match>
-
-  <!-- اجعل Arial هو الخط الافتراضي العام -->
-  <match target="pattern">
-    <edit name="family" mode="prepend" binding="strong">
-      <string>Arial</string>
-    </edit>
-  </match>
+  <alias>
+    <family>sans-serif</family>
+    <prefer>
+      <family>Arial</family>
+    </prefer>
+  </alias>
+  <alias>
+    <family>serif</family>
+    <prefer>
+      <family>Arial</family>
+    </prefer>
+  </alias>
+  <alias>
+    <family>monospace</family>
+    <prefer>
+      <family>Arial</family>
+    </prefer>
+  </alias>
 </fontconfig>
 EOF
 
-chown -R kiosk:kiosk /home/kiosk/.config/fontconfig
-runuser -u kiosk -- fc-cache -fv
+fc-cache -fv
 
 # ✅ إعداد X11 لمنع تبديل الشاشات
 cat > /etc/X11/xorg.conf << EOF
@@ -105,8 +106,9 @@ do
     --disable-session-crashed-bubble \
     --autoplay-policy=no-user-gesture-required \
     --incognito \
-    --font-family="Arial" \
-    --sans-serif-font="Arial" \
+    --font-family-sans-serif="Arial" \
+    --font-family-serif="Arial" \
+    --font-family-monospace="Arial" \
     "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
   sleep 5
 done &
@@ -115,4 +117,4 @@ EOF
 chmod +x /home/kiosk/.config/openbox/autostart
 chown -R kiosk:kiosk /home/kiosk/.config/openbox
 
-echo "✅ تم إعداد Kiosk باستخدام Chromium والخط Arial بدون sudo!
+echo "✅ تم إعداد Kiosk باستخدام Chromium والخط Arial كنظامي"
