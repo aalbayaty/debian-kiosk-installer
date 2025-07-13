@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# ✅ تحديث النظام وتثبيت البرامج الأساسية
+# ✅ تحديث الحزم
 apt-get update
 
+# ✅ تثبيت البرامج الأساسية
 apt-get install -y \
   unclutter \
   xorg \
@@ -13,17 +14,16 @@ apt-get install -y \
   wget \
   cabextract \
   fontconfig \
-  xfonts-utils \
-  sudo
+  xfonts-utils
 
 # ✅ تعيين المنطقة الزمنية
 timedatectl set-timezone Asia/Baghdad
 
-# ✅ تثبيت خطوط Microsoft (Arial, Times)
+# ✅ تثبيت خطوط Microsoft Arial و Times
 mkdir -p /usr/share/fonts/truetype/msttcorefonts
 cd /usr/share/fonts/truetype/msttcorefonts
-wget -O times32.exe https://downloads.sourceforge.net/corefonts/times32.exe
 wget -O arial32.exe https://downloads.sourceforge.net/corefonts/arial32.exe
+wget -O times32.exe https://downloads.sourceforge.net/corefonts/times32.exe
 cabextract -L -F '*.ttf' arial32.exe
 cabextract -L -F '*.ttf' times32.exe
 chmod 644 *.ttf
@@ -31,29 +31,57 @@ fc-cache -fv
 
 echo "✅ تم تثبيت خطوط Microsoft (Arial, Times)"
 
-# ✅ إعداد openbox autostart
-mkdir -p /home/kiosk/.config/openbox
-
-# ✅ إنشاء مجموعة ومستخدم kiosk إذا لم يكن موجود
+# ✅ إعداد مستخدم kiosk إذا لم يكن موجود
 groupadd -f kiosk
 id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash
 chown -R kiosk:kiosk /home/kiosk
 
-# ✅ إعداد X لمنع تبديل الشاشة
+# ✅ إعداد Arial كخط افتراضي باستخدام fontconfig
+runuser -u kiosk -- mkdir -p /home/kiosk/.config/fontconfig
+
+cat > /home/kiosk/.config/fontconfig/fonts.conf << EOF
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <!-- اجعل Arial هو الخط الأول للـ sans-serif -->
+  <match target="pattern">
+    <test name="family">
+      <string>sans-serif</string>
+    </test>
+    <edit name="family" mode="prepend" binding="strong">
+      <string>Arial</string>
+    </edit>
+  </match>
+
+  <!-- اجعل Arial هو الخط الافتراضي العام -->
+  <match target="pattern">
+    <edit name="family" mode="prepend" binding="strong">
+      <string>Arial</string>
+    </edit>
+  </match>
+</fontconfig>
+EOF
+
+chown -R kiosk:kiosk /home/kiosk/.config/fontconfig
+runuser -u kiosk -- fc-cache -fv
+
+# ✅ إعداد X11 لمنع تبديل الشاشات
 cat > /etc/X11/xorg.conf << EOF
 Section "ServerFlags"
     Option "DontVTSwitch" "true"
 EndSection
 EOF
 
-# ✅ إعداد lightdm لتسجيل الدخول تلقائيًا
+# ✅ إعداد LightDM لتسجيل الدخول التلقائي
 cat > /etc/lightdm/lightdm.conf << EOF
 [Seat:*]
 autologin-user=kiosk
 user-session=openbox
 EOF
 
-# ✅ autostart لتشغيل Chromium بخط Arial
+# ✅ إعداد autostart لتشغيل Chromium
+mkdir -p /home/kiosk/.config/openbox
+
 cat > /home/kiosk/.config/openbox/autostart << 'EOF'
 #!/bin/bash
 
@@ -85,6 +113,6 @@ done &
 EOF
 
 chmod +x /home/kiosk/.config/openbox/autostart
-chown -R kiosk:kiosk /home/kiosk
+chown -R kiosk:kiosk /home/kiosk/.config/openbox
 
-echo "✅ تم إعداد Kiosk باستخدام Chromium مع الخط الافتراضي Arial!"
+echo "✅ تم إعداد Kiosk باستخدام Chromium والخط Arial بدون sudo!
