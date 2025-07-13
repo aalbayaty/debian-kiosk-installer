@@ -1,54 +1,59 @@
 #!/bin/bash
 
-# ✅ تحديث النظام وتثبيت البرامج المطلوبة
+# ✅ تحديث النظام وتثبيت البرامج الأساسية
 apt-get update
+
 apt-get install -y \
   unclutter \
   xorg \
-  firefox-esr \
+  chromium \
   openbox \
   lightdm \
+  locales \
   wget \
   cabextract \
   fontconfig \
   xfonts-utils \
-  
+  sudo
 
-# ✅ تعيين المنطقة الزمنية فقط (بغداد)
+# ✅ تعيين المنطقة الزمنية
 timedatectl set-timezone Asia/Baghdad
 
-# ✅ تثبيت خطوط Microsoft Arial و Times
+# ✅ تثبيت خطوط Microsoft (Arial, Times)
 mkdir -p /usr/share/fonts/truetype/msttcorefonts
 cd /usr/share/fonts/truetype/msttcorefonts
-wget -O arial32.exe https://downloads.sourceforge.net/corefonts/arial32.exe
 wget -O times32.exe https://downloads.sourceforge.net/corefonts/times32.exe
+wget -O arial32.exe https://downloads.sourceforge.net/corefonts/arial32.exe
 cabextract -L -F '*.ttf' arial32.exe
 cabextract -L -F '*.ttf' times32.exe
 chmod 644 *.ttf
 fc-cache -fv
+
 echo "✅ تم تثبيت خطوط Microsoft (Arial, Times)"
 
-# ✅ إنشاء مستخدم kiosk إن لم يكن موجود
+# ✅ إعداد openbox autostart
+mkdir -p /home/kiosk/.config/openbox
+
+# ✅ إنشاء مجموعة ومستخدم kiosk إذا لم يكن موجود
 groupadd -f kiosk
 id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash
 chown -R kiosk:kiosk /home/kiosk
 
-# ✅ إعداد xorg لمنع تبديل الشاشات
+# ✅ إعداد X لمنع تبديل الشاشة
 cat > /etc/X11/xorg.conf << EOF
 Section "ServerFlags"
     Option "DontVTSwitch" "true"
 EndSection
 EOF
 
-# ✅ إعداد LightDM لتسجيل دخول تلقائي
+# ✅ إعداد lightdm لتسجيل الدخول تلقائيًا
 cat > /etc/lightdm/lightdm.conf << EOF
 [Seat:*]
 autologin-user=kiosk
 user-session=openbox
 EOF
 
-# ✅ مجلد autostart لتشغيل Firefox
-mkdir -p /home/kiosk/.config/openbox
+# ✅ autostart لتشغيل Chromium بخط Arial
 cat > /home/kiosk/.config/openbox/autostart << 'EOF'
 #!/bin/bash
 
@@ -59,32 +64,27 @@ xset -dpms
 xset s off
 xset s noblank
 
-firefox-esr \
-  --kiosk \
-  --private-window \
-  --no-remote \
-  --profile /home/kiosk/.mozilla/kiosk-profile \
-  "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
+while true
+do
+  chromium \
+    --no-sandbox \
+    --kiosk \
+    --lang=ar \
+    --disable-translate \
+    --disable-infobars \
+    --disable-suggestions-service \
+    --disable-save-password-bubble \
+    --disable-session-crashed-bubble \
+    --autoplay-policy=no-user-gesture-required \
+    --incognito \
+    --font-family="Arial" \
+    --sans-serif-font="Arial" \
+    "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
+  sleep 5
+done &
 EOF
 
 chmod +x /home/kiosk/.config/openbox/autostart
 chown -R kiosk:kiosk /home/kiosk
 
-# ✅ إنشاء بروفايل Firefox kiosk
-  -u kiosk firefox-esr -CreateProfile "kiosk-profile /home/kiosk/.mozilla/kiosk-profile"
-
-# ✅ إعدادات منع النوافذ المزعجة في Firefox
-mkdir -p /home/kiosk/.mozilla/kiosk-profile
-cat > /home/kiosk/.mozilla/kiosk-profile/user.js << EOF
-user_pref("browser.shell.checkDefaultBrowser", false);
-user_pref("app.update.enabled", false);
-user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
-user_pref("browser.startup.homepage_override.mstone", "ignore");
-user_pref("browser.usedOnWindows10.introURL", "");
-user_pref("privacy.sanitize.sanitizeOnShutdown", true);
-user_pref("toolkit.telemetry.reportingpolicy.firstRun", false);
-EOF
-
-chown -R kiosk:kiosk /home/kiosk/.mozilla
-
-echo "✅ تم الانتهاء من إعداد kiosk باستخدام Firefox بدون لغة عربية خاصة!"
+echo "✅ تم إعداد Kiosk باستخدام Chromium مع الخط الافتراضي Arial!"
