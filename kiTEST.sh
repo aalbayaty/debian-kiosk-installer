@@ -1,9 +1,24 @@
 #!/bin/bash
+# This script must be run as root or with sudo.
 
-# be new
+echo "--- Starting Kiosk Setup for Debian 12 ---"
+
+# --- 1. System Update and Prerequisities ---
+apt-get update
+# software-properties-common is needed for 'add-apt-repository' functionality
+apt-get install software-properties-common -y
+
+# --- 2. Enable 'contrib' and 'non-free' for extra packages ---
+# This is the correct way to add repositories in Debian
+echo "--> Enabling contrib and non-free repositories..."
+add-apt-repository "deb http://deb.debian.org/debian/ bookworm main contrib non-free non-free-firmware"
 apt-get update
 
-# get software
+# --- 3. Install Software ---
+echo "--> Installing required packages..."
+# Auto-accept the EULA for Microsoft fonts
+echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
+
 apt-get install \
 	unclutter \
     xorg \
@@ -11,46 +26,46 @@ apt-get install \
     openbox \
     lightdm \
     locales \
+    ttf-mscorefonts-installer \
     -y
 
+# --- 4. System Configuration ---
+echo "--> Setting timezone..."
 timedatectl set-timezone Asia/Baghdad
-  add-apt-repository multiverse
 
-  echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
-  apt-get install ttf-mscorefonts-installer -y
-
-# dir
-mkdir -p /home/kiosk/.config/openbox
-
-# create group
-groupadd kiosk
-
-# create user if not exists
-id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash 
-
-# rights
-chown -R kiosk:kiosk /home/kiosk
-
-# remove virtual consoles
-if [ -e "/etc/X11/xorg.conf" ]; then
-  mv /etc/X11/xorg.conf /etc/X11/xorg.conf.backup
+# --- 5. Create Kiosk User and Group Safely ---
+echo "--> Creating kiosk user and group..."
+# Create group only if it doesn't exist
+if ! getent group kiosk > /dev/null; then
+    groupadd kiosk
 fi
+# Create user only if it doesn't exist
+if ! id -u kiosk &>/dev/null; then
+    useradd -m kiosk -g kiosk -s /bin/bash
+fi
+
+# --- 6. Configure Xorg (Disable VT Switching) ---
+echo "--> Configuring Xorg..."
 cat > /etc/X11/xorg.conf << EOF
 Section "ServerFlags"
     Option "DontVTSwitch" "true"
 EndSection
 EOF
 
-# create config
-if [ -e "/etc/lightdm/lightdm.conf" ]; then
-  mv /etc/lightdm/lightdm.conf /etc/lightdm/lightdm.conf.backup
-fi
+# --- 7. Configure LightDM for Autologin ---
+echo "--> Configuring LightDM for autologin..."
+# Create the directory just in case
+mkdir -p /etc/lightdm/
 cat > /etc/lightdm/lightdm.conf << EOF
 [SeatDefaults]
 autologin-user=kiosk
 user-session=openbox
 EOF
 
+# --- 8. Configure System Fonts ---
+echo "--> Configuring system fonts..."
+# This XML data now goes into its own correct file.
+cat > /etc/fonts/local.conf << 'EOF'
 <?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
 <fontconfig>
@@ -60,83 +75,67 @@ EOF
       <prefer>
          <family>Times New Roman</family>
          <family>DejaVu Serif</family>
-         <family>Noto Serif</family>
-         <family>Thorndale AMT</family>
-         <family>Luxi Serif</family>
-         <family>Nimbus Roman No9 L</family>
-         <family>Nimbus Roman</family>
-         <family>Times</family>
       </prefer>
    </alias>
    <alias>
       <family>sans-serif</family>
       <prefer>
          <family>DejaVu Sans</family>
-         <family>Noto Sans</family>
          <family>Verdana</family>
          <family>Arial</family>
-         <family>Albany AMT</family>
-         <family>Luxi Sans</family>
-         <family>Nimbus Sans L</family>
-         <family>Nimbus Sans</family>
-         <family>Helvetica</family>
-         <family>Lucida Sans Unicode</family>
-         <family>BPG Glaho International</family> <!-- lat,cyr,arab,geor -->
-         <family>Tahoma</family> <!-- lat,cyr,greek,heb,arab,thai -->
       </prefer>
    </alias>
    <alias>
       <family>monospace</family>
       <prefer>
          <family>DejaVu Sans Mono</family>
-         <family>Noto Mono</family>
-         <family>Noto Sans Mono</family>
          <family>Inconsolata</family>
-         <family>Andale Mono</family>
          <family>Courier New</family>
-         <family>Cumberland AMT</family>
-         <family>Luxi Mono</family>
-         <family>Nimbus Mono L</family>
-         <family>Nimbus Mono</family>
-         <family>Nimbus Mono PS</family>
-         <family>Courier</family>
       </prefer>
    </alias>
 </fontconfig>
+EOF
+# Update the font cache
+fc-cache -fv
 
+# --- 9. Create Openbox Autostart Script ---
+echo "--> Creating Openbox autostart script..."
+# Create config directory for the kiosk user
+mkdir -p /home/kiosk/.config/openbox
 
-
-
-
-# create autostart
-if [ -e "/home/kiosk/.config/openbox/autostart" ]; then
-  mv /home/kiosk/.config/openbox/autostart /home/kiosk/.config/openbox/autostart.backup
-fi
-cat > /home/kiosk/.config/openbox/autostart << EOF
+cat > /home/kiosk/.config/openbox/autostart << 'EOF'
 #!/bin/bash
 
+# Hide the mouse cursor
 unclutter -idle 0.1 -grab -root &
 
+# Loop to ensure the browser restarts if it crashes
 while :
 do
-# xrandr -o left the screen will be to the left
-xrandr -o left
-xset -dpms
-xset s off
-xset s noblank
+  # Screen and power configuration
+  xrandr -o left
+  xset -dpms
+  xset s off
+  xset s noblank
+
+  # Launch Chromium in kiosk mode
   chromium \
     --no-first-run \
     --start-maximized \
-    --disable \
-    --disable-translate \
     --disable-infobars \
-    --disable-suggestions-service \
-    --disable-save-password-bubble \
     --disable-session-crashed-bubble \
     --incognito \
     --kiosk "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
+  
+  # Wait before restarting the browser if it closes
   sleep 5
 done &
 EOF
 
-echo "Done!"
+# --- 10. Set Final Permissions ---
+echo "--> Setting final permissions..."
+chown -R kiosk:kiosk /home/kiosk
+chmod +x /home/kiosk/.config/openbox/autostart
+
+echo ""
+echo "✅ Done! Reboot the system to start the kiosk."
