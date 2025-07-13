@@ -1,120 +1,142 @@
 #!/bin/bash
 
-# ✅ تحديث الحزم
+# be new
 apt-get update
 
-# ✅ تثبيت البرامج الأساسية
-apt-get install -y \
-  unclutter \
-  xorg \
-  chromium \
-  openbox \
-  lightdm \
-  locales \
-  wget \
-  cabextract \
-  fontconfig \
-  xfonts-utils
+# get software
+apt-get install \
+	unclutter \
+    xorg \
+    chromium \
+    openbox \
+    lightdm \
+    locales \
+    -y
 
-# ✅ تعيين المنطقة الزمنية
-timedatectl set-timezone Asia/Baghdad
+timedatectl set-timezone America/Guyana
+  add-apt-repository multiverse
 
-# ✅ تثبيت خطوط Microsoft Arial و Times
-mkdir -p /usr/share/fonts/truetype/msttcorefonts
-cd /usr/share/fonts/truetype/msttcorefonts
-wget -O arial32.exe https://downloads.sourceforge.net/corefonts/arial32.exe
-wget -O times32.exe https://downloads.sourceforge.net/corefonts/times32.exe
-cabextract -L -F '*.ttf' arial32.exe
-cabextract -L -F '*.ttf' times32.exe
-chmod 644 *.ttf
-fc-cache -fv
+  echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
+  apt-get install ttf-mscorefonts-installer -y
 
-echo "✅ تم تثبيت خطوط Microsoft (Arial, Times)"
+# dir
+mkdir -p /home/kiosk/.config/openbox
 
-# ✅ إعداد مستخدم kiosk إذا لم يكن موجود
-groupadd -f kiosk
-id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash
+# create group
+groupadd kiosk
+
+# create user if not exists
+id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash 
+
+# rights
 chown -R kiosk:kiosk /home/kiosk
 
-# ✅ إعداد Arial كخط افتراضي للنظام بالكامل
-mkdir -p /etc/fonts/conf.d
-
-cat > /etc/fonts/conf.d/99-arial-default.conf << EOF
-<?xml version="1.0"?>
-<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
-<fontconfig>
-  <alias>
-    <family>sans-serif</family>
-    <prefer>
-      <family>Arial</family>
-    </prefer>
-  </alias>
-  <alias>
-    <family>serif</family>
-    <prefer>
-      <family>Arial</family>
-    </prefer>
-  </alias>
-  <alias>
-    <family>monospace</family>
-    <prefer>
-      <family>Arial</family>
-    </prefer>
-  </alias>
-</fontconfig>
-EOF
-
-fc-cache -fv
-
-# ✅ إعداد X11 لمنع تبديل الشاشات
+# remove virtual consoles
+if [ -e "/etc/X11/xorg.conf" ]; then
+  mv /etc/X11/xorg.conf /etc/X11/xorg.conf.backup
+fi
 cat > /etc/X11/xorg.conf << EOF
 Section "ServerFlags"
     Option "DontVTSwitch" "true"
 EndSection
 EOF
 
-# ✅ إعداد LightDM لتسجيل الدخول التلقائي
+# create config
+if [ -e "/etc/lightdm/lightdm.conf" ]; then
+  mv /etc/lightdm/lightdm.conf /etc/lightdm/lightdm.conf.backup
+fi
 cat > /etc/lightdm/lightdm.conf << EOF
-[Seat:*]
+[SeatDefaults]
 autologin-user=kiosk
 user-session=openbox
 EOF
 
-# ✅ إعداد autostart لتشغيل Chromium
-mkdir -p /home/kiosk/.config/openbox
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <description>Replace preferable fonts for Latin</description>
+   <alias>
+      <family>serif</family>
+      <prefer>
+         <family>Times New Roman</family>
+         <family>DejaVu Serif</family>
+         <family>Noto Serif</family>
+         <family>Thorndale AMT</family>
+         <family>Luxi Serif</family>
+         <family>Nimbus Roman No9 L</family>
+         <family>Nimbus Roman</family>
+         <family>Times</family>
+      </prefer>
+   </alias>
+   <alias>
+      <family>sans-serif</family>
+      <prefer>
+         <family>DejaVu Sans</family>
+         <family>Noto Sans</family>
+         <family>Verdana</family>
+         <family>Arial</family>
+         <family>Albany AMT</family>
+         <family>Luxi Sans</family>
+         <family>Nimbus Sans L</family>
+         <family>Nimbus Sans</family>
+         <family>Helvetica</family>
+         <family>Lucida Sans Unicode</family>
+         <family>BPG Glaho International</family> <!-- lat,cyr,arab,geor -->
+         <family>Tahoma</family> <!-- lat,cyr,greek,heb,arab,thai -->
+      </prefer>
+   </alias>
+   <alias>
+      <family>monospace</family>
+      <prefer>
+         <family>DejaVu Sans Mono</family>
+         <family>Noto Mono</family>
+         <family>Noto Sans Mono</family>
+         <family>Inconsolata</family>
+         <family>Andale Mono</family>
+         <family>Courier New</family>
+         <family>Cumberland AMT</family>
+         <family>Luxi Mono</family>
+         <family>Nimbus Mono L</family>
+         <family>Nimbus Mono</family>
+         <family>Nimbus Mono PS</family>
+         <family>Courier</family>
+      </prefer>
+   </alias>
+</fontconfig>
 
-cat > /home/kiosk/.config/openbox/autostart << 'EOF'
+
+
+
+
+# create autostart
+if [ -e "/home/kiosk/.config/openbox/autostart" ]; then
+  mv /home/kiosk/.config/openbox/autostart /home/kiosk/.config/openbox/autostart.backup
+fi
+cat > /home/kiosk/.config/openbox/autostart << EOF
 #!/bin/bash
 
 unclutter -idle 0.1 -grab -root &
 
+while :
+do
+# xrandr -o left the screen will be to the left
 xrandr -o left
 xset -dpms
 xset s off
 xset s noblank
-
-while true
-do
   chromium \
-    --no-sandbox \
-    --kiosk \
-    --lang=ar \
+    --no-first-run \
+    --start-maximized \
+    --disable \
     --disable-translate \
     --disable-infobars \
     --disable-suggestions-service \
     --disable-save-password-bubble \
     --disable-session-crashed-bubble \
-    --autoplay-policy=no-user-gesture-required \
     --incognito \
-    --font-family-sans-serif="Arial" \
-    --font-family-serif="Arial" \
-    --font-family-monospace="Arial" \
-    "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
+    --kiosk "https://muslimhub.net/public/location/Guyana331/?Settings=tv"
   sleep 5
 done &
 EOF
 
-chmod +x /home/kiosk/.config/openbox/autostart
-chown -R kiosk:kiosk /home/kiosk/.config/openbox
-
-echo "✅ تم إعداد Kiosk باستخدام Chromium والخط Arial كنظامي"
+echo "Done!"
