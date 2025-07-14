@@ -13,7 +13,7 @@ apt-get install \
     locales \
     -y
 
-timedatectl set-timezone America/Guyana
+timedatectl set-timezone Asia/Baghdad
   add-apt-repository multiverse
 
   echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
@@ -106,7 +106,7 @@ xset s noblank
     --disable-save-password-bubble \
     --disable-session-crashed-bubble \
     --incognito \
-    --kiosk "https://muslimhub.net/public/location/Guyana331/?Settings=tv"
+    --kiosk "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
   sleep 5
 done &
 EOF
