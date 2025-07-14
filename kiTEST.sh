@@ -59,10 +59,10 @@ autologin-user=kiosk
 user-session=openbox
 EOF
 
-# ✅ إعداد Arial كخط افتراضي للنظام بالكامل
+# ✅ إعداد Arial كخط افتراضي للنظام
 mkdir -p /etc/fonts/conf.d
 
-cat > /etc/fonts/conf.d/99-arial-default.conf << EOF
+cat > /etc/fonts/conf.d/60-arial-prefer.conf << "EOF"
 <?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
 <fontconfig>
@@ -72,22 +72,10 @@ cat > /etc/fonts/conf.d/99-arial-default.conf << EOF
       <family>Arial</family>
     </prefer>
   </alias>
-  <alias>
-    <family>serif</family>
-    <prefer>
-      <family>Arial</family>
-    </prefer>
-  </alias>
-  <alias>
-    <family>monospace</family>
-    <prefer>
-      <family>Arial</family>
-    </prefer>
-  </alias>
 </fontconfig>
 EOF
 
-fc-cache -fv
+fc-cache -f -v
 
 
 
