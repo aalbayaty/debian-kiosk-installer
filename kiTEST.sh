@@ -23,7 +23,15 @@ timedatectl set-timezone America/Guyana
 mkdir -p /home/kiosk/.config/openbox
 
 # create group
-groupadd kiosk
+if ! getent group kiosk > /dev/null; then
+  groupadd kiosk
+fi
+
+if ! id -u kiosk > /dev/null 2>&1; then
+  useradd -m kiosk -g kiosk -s /bin/bash
+fi
+
+chown -R kiosk:kiosk /home/kiosk
 
 # create user if not exists
 id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash 
