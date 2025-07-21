@@ -22,6 +22,35 @@ apt-get install \
 # dir
 mkdir -p /home/kiosk/.config/openbox
 
+# ✅ حذف خطوط DejaVu
+apt-get purge -y fonts-dejavu*
+
+# ✅ تنزيل وتثبيت خط Arial يدوياً من GitHub
+mkdir -p /usr/share/fonts/truetype/arial
+cd /usr/share/fonts/truetype/arial
+
+# استخدم رابط مباشر من مستودع موثوق
+wget -qO arial.ttf \
+  https://raw.githubusercontent.com/kavin808/arial.ttf/master/arial.ttf
+chmod 644 arial.ttf
+
+# ✅ تحديث كاش الخطوط
+fc-cache -f -v
+
+# ✅ تعيين Arial كخط النظام الافتراضي
+mkdir -p /etc/fonts/conf.d
+cat > /etc/fonts/conf.d/60-arial-prefer.conf << "EOF"
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <alias><family>sans-serif</family><prefer><family>Arial</family></prefer></alias>
+  <alias><family>serif</family><prefer><family>Arial</family></prefer></alias>
+  <alias><family>monospace</family><prefer><family>Arial</family></prefer></alias>
+</fontconfig>
+EOF
+fc-cache -f -v
+
+
 # create group
 groupadd kiosk
 
