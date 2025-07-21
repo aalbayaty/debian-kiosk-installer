@@ -52,7 +52,12 @@ fc-cache -f -v
 
 
 # create group
-groupadd kiosk
+
+
+# create group
+getent group kiosk >/dev/null || groupadd kiosk
+id -u kiosk &>/dev/null || useradd -m -g kiosk -s /bin/bash kiosk
+chown -R kiosk:kiosk /home/kiosk
 
 # create user if not exists
 id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash 
