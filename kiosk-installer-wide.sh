@@ -19,6 +19,35 @@ apt-get install \
   echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
   apt-get install ttf-mscorefonts-installer -y
 
+
+# ✅ حذف خطوط DejaVu
+apt-get purge -y fonts-dejavu*
+
+# ✅ تنزيل وتثبيت خط Arial يدوياً من GitHub
+mkdir -p /usr/share/fonts/truetype/arial
+cd /usr/share/fonts/truetype/arial
+
+# استخدم رابط مباشر من مستودع موثوق
+wget -qO arial.ttf \
+  https://raw.githubusercontent.com/kavin808/arial.ttf/master/arial.ttf
+chmod 644 arial.ttf
+
+# ✅ تحديث كاش الخطوط
+fc-cache -f -v
+
+# ✅ تعيين Arial كخط النظام الافتراضي
+mkdir -p /etc/fonts/conf.d
+cat > /etc/fonts/conf.d/60-arial-prefer.conf << "EOF"
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <alias><family>sans-serif</family><prefer><family>Arial</family></prefer></alias>
+  <alias><family>serif</family><prefer><family>Arial</family></prefer></alias>
+  <alias><family>monospace</family><prefer><family>Arial</family></prefer></alias>
+</fontconfig>
+EOF
+fc-cache -f -v
+
 # dir
 mkdir -p /home/kiosk/.config/openbox
 
@@ -80,7 +109,7 @@ xset s noblank
     --disable-session-crashed-bubble \
     --autoplay-policy=no-user-gesture-required \
     --incognito \
-    --kiosk "https://muslimhub.net/public/location/wide/hyatt/?Settings=TVPrayerHall"
+    --kiosk "https://muslimhub.net/public/location/wide/StThomas/?Settings=TVh"
   sleep 5
 done &
 EOF
