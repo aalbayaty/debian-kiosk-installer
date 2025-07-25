@@ -1,38 +1,35 @@
 #!/bin/bash
-set -e
 
-# ✅ تحديث النظام وتثبيت الحزم الأساسية
+# ✅ Update system packages
 apt-get update
+
+# ✅ Install necessary packages
 apt-get install -y \
-  wget \
-  unzip \
-  fontconfig \
-  xorg \
   unclutter \
+  xorg \
   chromium \
   openbox \
   lightdm \
-  locales
+  locales \
+  dialog \
+  network-manager \
+  xterm \
+  ttf-mscorefonts-installer
 
-# ✅ ضبط المنطقة الزمنية
-timedatectl set-timezone Asia/Baghdad
+# ✅ Accept Microsoft fonts license
+echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
 
-# ✅ حذف خطوط DejaVu
+# ✅ Remove DejaVu fonts
 apt-get purge -y fonts-dejavu*
 
-# ✅ تنزيل وتثبيت خط Arial يدوياً من GitHub
+# ✅ Download and install Arial font
 mkdir -p /usr/share/fonts/truetype/arial
 cd /usr/share/fonts/truetype/arial
-
-# استخدم رابط مباشر من مستودع موثوق
-wget -qO arial.ttf \
-  https://raw.githubusercontent.com/kavin808/arial.ttf/master/arial.ttf
+wget -qO arial.ttf https://raw.githubusercontent.com/kavin808/arial.ttf/master/arial.ttf
 chmod 644 arial.ttf
-
-# ✅ تحديث كاش الخطوط
 fc-cache -f -v
 
-# ✅ تعيين Arial كخط النظام الافتراضي
+# ✅ Set Arial as the default system font
 mkdir -p /etc/fonts/conf.d
 cat > /etc/fonts/conf.d/60-arial-prefer.conf << "EOF"
 <?xml version="1.0"?>
@@ -45,48 +42,66 @@ cat > /etc/fonts/conf.d/60-arial-prefer.conf << "EOF"
 EOF
 fc-cache -f -v
 
-# ✅ إنشاء مستخدم kiosk إذا لم يكن موجودًا
+# ✅ Create 'kiosk' user and group if they do not exist
 getent group kiosk >/dev/null || groupadd kiosk
 id -u kiosk &>/dev/null || useradd -m -g kiosk -s /bin/bash kiosk
 chown -R kiosk:kiosk /home/kiosk
 
-# ✅ تعطيل تبديل TTY الفعلي
+# ✅ Configure X to prevent virtual terminal switching
 cat > /etc/X11/xorg.conf << EOF
 Section "ServerFlags"
     Option "DontVTSwitch" "true"
 EndSection
 EOF
 
-# ✅ إعداد LightDM لتسجيل الدخول التلقائي
+# ✅ Configure LightDM to auto-login as kiosk user with Openbox session
 cat > /etc/lightdm/lightdm.conf << EOF
 [SeatDefaults]
 autologin-user=kiosk
 user-session=openbox
 EOF
 
-# ✅ إعداد autostart لـ openbox
+# ✅ Create Openbox autostart script
 mkdir -p /home/kiosk/.config/openbox
 cat > /home/kiosk/.config/openbox/autostart << 'EOF'
 #!/bin/bash
-unclutter -idle 0.1 -grab -root &
-while true; do
-  xrandr -o left
-  xset -dpms && xset s off && xset s noblank
-  chromium \
-    --no-first-run \
-    --start-maximized \
-    --disable \
-    --disable-translate \
-    --disable-infobars \
-    --disable-suggestions-service \
-    --disable-save-password-bubble \
-    --disable-session-crashed-bubble \
-    --incognito \
-    --kiosk "https://muslimhub.net/public/Ar/location/BGW790/?Settings=tv"
-  sleep 5
-done &
-EOF
-chmod +x /home/kiosk/.config/openbox/autostart
-chown -R kiosk:kiosk /home/kiosk
 
-echo "✅ تم التثبيت: Arial هو الخط الافتراضي والنظام يعمل بوضع Kiosk على Chromium."
+# Hide mouse cursor after idle
+unclutter -idle 0.1 -grab -root &
+
+# Show 5-second dialog to ask if user wants to configure Wi-Fi
+(
+  dialog --timeout 5 --stdout --yesno "Do you want to change your Wi-Fi name and password?" 7 60
+  if [ $? -eq 0 ]; then
+    # User selected "Yes"
+    xterm -e nmtui-connect
+  fi
+) &
+
+# Wait for dialog to finish before launching Chromium
+sleep 6
+
+# Disable screen blanking and power saving
+xrandr -o left
+xset -dpms
+xset s off
+xset s noblank
+
+# Launch Chromium in kiosk mode
+chromium \
+  --no-first-run \
+  --start-maximized \
+  --disable \
+  --disable-translate \
+  --disable-infobars \
+  --disable-suggestions-service \
+  --disable-save-password-bubble \
+  --disable-session-crashed-bubble \
+  --autoplay-policy=no-user-gesture-required \
+  --incognito \
+  --kiosk "https://muslimhub.net/public/location/StThomas/?Settings=tv"
+EOF
+
+# ✅ Set permissions and make autostart executable
+chown -R kiosk:kiosk /home/kiosk
+chmod +x /home/kiosk/.config/openbox/autostart
