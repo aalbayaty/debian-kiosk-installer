@@ -3,7 +3,7 @@
 # ✅ Update system packages
 apt-get update
 
-# ✅ Install necessary packages
+# ✅ Install required packages
 apt-get install -y \
   unclutter \
   xorg \
@@ -42,31 +42,31 @@ cat > /etc/fonts/conf.d/60-arial-prefer.conf << "EOF"
 EOF
 fc-cache -f -v
 
-# ✅ Create 'kiosk' user and group if they do not exist
+# ✅ Create kiosk user and group if not exist
 getent group kiosk >/dev/null || groupadd kiosk
 id -u kiosk &>/dev/null || useradd -m -g kiosk -s /bin/bash kiosk
 chown -R kiosk:kiosk /home/kiosk
 
-# ✅ Configure X to prevent virtual terminal switching
+# ✅ Prevent switching virtual consoles (X11)
 cat > /etc/X11/xorg.conf << EOF
 Section "ServerFlags"
     Option "DontVTSwitch" "true"
 EndSection
 EOF
 
-# ✅ Configure LightDM to auto-login as kiosk user with Openbox session
+# ✅ Configure LightDM for auto-login with Openbox
 cat > /etc/lightdm/lightdm.conf << EOF
 [SeatDefaults]
 autologin-user=kiosk
 user-session=openbox
 EOF
 
-# ✅ Create Openbox autostart script
+# ✅ Create Openbox autostart with Wi-Fi prompt
 mkdir -p /home/kiosk/.config/openbox
 cat > /home/kiosk/.config/openbox/autostart << 'EOF'
 #!/bin/bash
 
-# Hide mouse cursor after idle
+# Hide mouse cursor
 unclutter -idle 0.1 -grab -root &
 
 # Show 5-second dialog to ask if user wants to configure Wi-Fi
@@ -78,11 +78,11 @@ unclutter -idle 0.1 -grab -root &
   fi
 ) &
 
-# Wait for dialog to finish before launching Chromium
+# Wait for dialog before launching browser
 sleep 6
 
-# Disable screen blanking and power saving
-xrandr -o left
+# Disable screen blanking
+xrandr -o right
 xset -dpms
 xset s off
 xset s noblank
@@ -102,6 +102,12 @@ chromium \
   --kiosk "https://muslimhub.net/public/location/StThomas/?Settings=tv"
 EOF
 
-# ✅ Set permissions and make autostart executable
-chown -R kiosk:kiosk /home/kiosk
-chmod +x /home/kiosk/.config/openbox/autostart
+# ✅ Set permissions
+# chown -R kiosk:kiosk /home/kiosk
+# chmod +x /home/kiosk/.config/openbox/autostart
+
+# ✅ OPTIONAL: Auto-connect to predefined Wi-Fi (uncomment and edit if needed)
+# nmcli device wifi rescan
+# nmcli connection delete id "MyWiFi" &>/dev/null || true
+# nmcli device wifi connect "MyWiFi" password "MyPassword123" name "MyWiFi"
+# nmcli connection modify "MyWiFi" connection.autoconnect yes
