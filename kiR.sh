@@ -23,51 +23,12 @@ mkdir -p /home/kiosk/.config/openbox
 apt-get purge -y fonts-dejavu*
 
 # Manually download and install Taha font from GitHub
-mkdir -p /usr/share/fonts/truetype/Taha
-cd /usr/share/fonts/truetype/Taha || exit
+#mkdir -p /usr/share/fonts/truetype/Taha
+#cd /usr/share/fonts/truetype/Taha || exit
 
-wget -qO Taha.ttf \
-    https://github.com/aalbayaty/debian-kiosk-installer/raw/refs/heads/master/amiri_font/Taha.ttf
-chmod 644 Taha.ttf
-
-# Update font cache
-fc-cache -f -v
-
-# Set Taha as the preferred default font for sans-serif, serif, and monospace families
-mkdir -p /etc/fonts/conf.d
-cat > /etc/fonts/conf.d/60-Taha-prefer.conf << EOF
-<?xml version="1.0"?>
-<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
-<fontconfig>
-  <match target="pattern">
-    <test name="family" compare="contains">
-      <string>sans-serif</string>
-    </test>
-    <edit name="family" mode="assign" binding="strong">
-      <string>Taha</string>
-    </edit>
-  </match>
-  <match target="pattern">
-    <test name="family" compare="contains">
-      <string>serif</string>
-    </test>
-    <edit name="family" mode="assign" binding="strong">
-      <string>Taha</string>
-    </edit>
-  </match>
-  <match target="pattern">
-    <test name="family" compare="contains">
-      <string>monospace</string>
-    </test>
-    <edit name="family" mode="assign" binding="strong">
-      <string>Taha</string>
-    </edit>
-  </match>
-</fontconfig>
-EOF
-
-# Update font cache again after config change
-fc-cache -f -v
+#wget -qO Taha.ttf \
+#    https://github.com/aalbayaty/debian-kiosk-installer/raw/refs/heads/master/amiri_font/Taha.ttf
+#chmod 644 Taha.ttf
 
 # Create kiosk group if it doesn't exist
 getent group kiosk >/dev/null || groupadd kiosk
@@ -104,6 +65,13 @@ EOF
 if [ -e "/home/kiosk/.config/openbox/autostart" ]; then
   mv /home/kiosk/.config/openbox/autostart /home/kiosk/.config/openbox/autostart.backup
 fi
+
+curl http://dub.sh/kifont.zip -LO
+mkdir /home/kiosk/.fonts
+unzip kifont.zip -d /home/kiosk/.fonts
+chown kiosk:kiosk /home/kiosk/.fonts -R
+fc-cache -f -v
+
 
 cat > /home/kiosk/.config/openbox/autostart << EOF
 #!/bin/bash
