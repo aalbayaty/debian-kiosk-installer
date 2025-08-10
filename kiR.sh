@@ -16,6 +16,8 @@ apt-get install -y \
 # Add multiverse repository (needed for some fonts)
 add-apt-repository multiverse
 
+apt-get install unzip curl
+
 # Create Openbox config directory for kiosk user
 mkdir -p /home/kiosk/.config/openbox
 
