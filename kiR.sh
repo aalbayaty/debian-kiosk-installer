@@ -16,8 +16,6 @@ apt-get install -y \
 # Add multiverse repository (needed for some fonts)
 add-apt-repository multiverse
 
-apt-get install unzip curl
-
 # Create Openbox config directory for kiosk user
 mkdir -p /home/kiosk/.config/openbox
 
@@ -65,12 +63,16 @@ if [ -e "/home/kiosk/.config/openbox/autostart" ]; then
   mv /home/kiosk/.config/openbox/autostart /home/kiosk/.config/openbox/autostart.backup
 fi
 
+################# ARABIC ###################
+apt-get install -y unzip curl
+
 curl http://dub.sh/kifont.zip -LO
 mkdir /home/kiosk/.fonts
 unzip kifont.zip -d /home/kiosk/.fonts
 chown kiosk:kiosk /home/kiosk/.fonts -R
 fc-cache -f -v
 
+################ END OF ARABIC ################
 
 cat > /home/kiosk/.config/openbox/autostart << EOF
 #!/bin/bash
