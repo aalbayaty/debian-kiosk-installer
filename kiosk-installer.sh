@@ -16,36 +16,34 @@ apt-get install \
 # timedatectl set-timezone America/Guyana
   add-apt-repository multiverse
 
-  echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
-  apt-get install ttf-mscorefonts-installer -y
-
+ 
 # dir
 mkdir -p /home/kiosk/.config/openbox
 
 # ✅ حذف خطوط DejaVu
 apt-get purge -y fonts-dejavu*
 
-# ✅ تنزيل وتثبيت خط Arial يدوياً من GitHub
-mkdir -p /usr/share/fonts/truetype/arial
-cd /usr/share/fonts/truetype/arial
+# ✅ تنزيل وتثبيت خط Amiri-Regular يدوياً من GitHub
+mkdir -p /usr/share/fonts/truetype/Amiri-Regular
+cd /usr/share/fonts/truetype/Amiri-Regular
 
 # استخدم رابط مباشر من مستودع موثوق
-wget -qO arial.ttf \
-  https://raw.githubusercontent.com/kavin808/arial.ttf/master/arial.ttf
-chmod 644 arial.ttf
+wget -qO Amiri-Regular.ttf \
+ https://github.com/aalbayaty/debian-kiosk-installer/raw/refs/heads/master/amiri_font/Amiri-Regular.ttf
+chmod 644 Amiri-Regular.ttf
 
 # ✅ تحديث كاش الخطوط
 fc-cache -f -v
 
-# ✅ تعيين Arial كخط النظام الافتراضي
+# ✅ تعيين Amiri-Regular كخط النظام الافتراضي
 mkdir -p /etc/fonts/conf.d
-cat > /etc/fonts/conf.d/60-arial-prefer.conf << "EOF"
+cat > /etc/fonts/conf.d/60-Amiri-Regular-prefer.conf << "EOF"
 <?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
 <fontconfig>
-  <alias><family>sans-serif</family><prefer><family>Arial</family></prefer></alias>
-  <alias><family>serif</family><prefer><family>Arial</family></prefer></alias>
-  <alias><family>monospace</family><prefer><family>Arial</family></prefer></alias>
+  <alias><family>sans-serif</family><prefer><family>Amiri-Regular</family></prefer></alias>
+  <alias><family>serif</family><prefer><family>Amiri-Regular</family></prefer></alias>
+  <alias><family>monospace</family><prefer><family>Amiri-Regular</family></prefer></alias>
 </fontconfig>
 EOF
 fc-cache -f -v
