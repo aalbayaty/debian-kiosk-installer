@@ -19,9 +19,6 @@ add-apt-repository multiverse
 # Create Openbox config directory for kiosk user
 mkdir -p /home/kiosk/.config/openbox
 
-# Remove DejaVu fonts to avoid conflicts
-apt-get purge -y fonts-dejavu*
-
 # Manually download and install Taha font from GitHub
 #mkdir -p /usr/share/fonts/truetype/Taha
 #cd /usr/share/fonts/truetype/Taha || exit
