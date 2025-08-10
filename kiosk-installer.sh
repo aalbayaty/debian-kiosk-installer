@@ -22,20 +22,20 @@ mkdir -p /home/kiosk/.config/openbox
 # Remove DejaVu fonts to avoid conflicts
 apt-get purge -y fonts-dejavu*
 
-# Manually download and install Amiri-Regular font from a trusted GitHub repo
-mkdir -p /usr/share/fonts/truetype/Amiri-Regular
-cd /usr/share/fonts/truetype/Amiri-Regular || exit
+# Manually download and install Taha font from GitHub
+mkdir -p /usr/share/fonts/truetype/Taha
+cd /usr/share/fonts/truetype/Taha || exit
 
-wget -qO Amiri-Regular.ttf \
-    https://github.com/aalbayaty/debian-kiosk-installer/raw/refs/heads/master/amiri_font/Amiri-Regular.ttf
-chmod 644 Amiri-Regular.ttf
+wget -qO Taha.ttf \
+    https://github.com/aalbayaty/debian-kiosk-installer/raw/refs/heads/master/amiri_font/Taha.ttf
+chmod 644 Taha.ttf
 
 # Update font cache
 fc-cache -f -v
 
-# Set Amiri as the preferred default font for sans-serif, serif, and monospace families
+# Set Taha as the preferred default font for sans-serif, serif, and monospace families
 mkdir -p /etc/fonts/conf.d
-cat > /etc/fonts/conf.d/60-Amiri-prefer.conf << EOF
+cat > /etc/fonts/conf.d/60-Taha-prefer.conf << EOF
 <?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
 <fontconfig>
@@ -44,7 +44,7 @@ cat > /etc/fonts/conf.d/60-Amiri-prefer.conf << EOF
       <string>sans-serif</string>
     </test>
     <edit name="family" mode="assign" binding="strong">
-      <string>Amiri</string>
+      <string>Taha</string>
     </edit>
   </match>
   <match target="pattern">
@@ -52,7 +52,7 @@ cat > /etc/fonts/conf.d/60-Amiri-prefer.conf << EOF
       <string>serif</string>
     </test>
     <edit name="family" mode="assign" binding="strong">
-      <string>Amiri</string>
+      <string>Taha</string>
     </edit>
   </match>
   <match target="pattern">
@@ -60,7 +60,7 @@ cat > /etc/fonts/conf.d/60-Amiri-prefer.conf << EOF
       <string>monospace</string>
     </test>
     <edit name="family" mode="assign" binding="strong">
-      <string>Amiri</string>
+      <string>Taha</string>
     </edit>
   </match>
 </fontconfig>
