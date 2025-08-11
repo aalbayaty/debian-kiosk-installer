@@ -63,7 +63,7 @@ unclutter -idle 0.1 -grab -root &
 while :
 do
 # xrandr -o left the screen will be to the left
-xrandr -o left
+xrandr -o Right
 xset -dpms
 xset s off
 xset s noblank
