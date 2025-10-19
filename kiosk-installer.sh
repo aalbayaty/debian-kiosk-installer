@@ -93,7 +93,7 @@ EOF
 if [ -e "/etc/lightdm/lightdm.conf" ]; then
   mv /etc/lightdm/lightdm.conf /etc/lightdm/lightdm.conf.backup
 fi
-
+mkdir -p /etc/lightdm
 cat > /etc/lightdm/lightdm.conf << EOF
 [SeatDefaults]
 autologin-user=kiosk
