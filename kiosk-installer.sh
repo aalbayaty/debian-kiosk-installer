@@ -10,11 +10,7 @@ apt-get install -y \
     chromium \
     openbox \
     lightdm \
-    locales \
-    software-properties-common  # for add-apt-repository
-
-# Add multiverse repository (needed for some fonts)
-add-apt-repository multiverse
+    locales 
 
 # Create Openbox config directory for kiosk user
 mkdir -p /home/kiosk/.config/openbox
