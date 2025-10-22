@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # ── Pick the kiosk location using location code ──────────────────────────────
-echo "Enter the location code for the kiosk."
+echo "Enter the location code for the kiosk URL."
+echo "The URL will be: https://muslimhub.net/public/location/{CODE}/?Settings={DISPLAY}"
 echo ""
 read -p "Enter location code: " location_code
 
@@ -14,6 +15,10 @@ fi
 # ── Select display type ───────────────────────────────────────────────────────
 echo ""
 echo "Display type options:"
+echo "  tv      - TV display (default)"
+echo "  kiosk   - Kiosk display"
+echo "  mobile  - Mobile display"
+echo "  custom  - Enter custom display code"
 echo ""
 read -p "Enter display type [tv]: " display_input
 
@@ -131,4 +136,47 @@ EOF
 
 # Backup and create Openbox autostart script
 [ -e "/home/kiosk/.config/openbox/autostart" ] && \
-  mv /home/kiosk/.config/openbox/autos
+  mv /home/kiosk/.config/openbox/autostart /home/kiosk/.config/openbox/autostart.backup
+cat > /home/kiosk/.config/openbox/autostart << EOF
+#!/bin/bash
+# Hide mouse cursor after 0.1 seconds of inactivity
+unclutter -idle 0.1 -grab -root &
+
+while :
+do
+  # Rotate screen to selected orientation
+  xrandr -o $ROTATION
+  
+  # Disable power management and screen blanking
+  xset -dpms
+  xset s off
+  xset s noblank
+  
+  # Launch Chromium in kiosk mode
+  chromium \
+    --no-first-run \
+    --start-maximized \
+    --disable-translate \
+    --disable-infobars \
+    --disable-suggestions-service \
+    --disable-save-password-bubble \
+    --disable-session-crashed-bubble \
+    --autoplay-policy=no-user-gesture-required \
+    --incognito \
+    --kiosk "$KIOSK_URL"
+  
+  sleep 5
+done &
+EOF
+
+chmod +x /home/kiosk/.config/openbox/autostart
+
+echo ""
+echo "Setup complete!"
+echo "Configuration:"
+echo "  Location Code: $location_code"
+echo "  Display Type: $DISPLAY_CODE"
+echo "  URL: $KIOSK_URL"
+echo "  Rotation: $ROTATION"
+echo ""
+fc-match
