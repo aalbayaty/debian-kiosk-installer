@@ -1,41 +1,61 @@
 #!/bin/bash
 
-# ── Pick the kiosk URL ───────────────────────────────────────────────────────
-PS3="Select the kiosk location (1-5): "
-options=(
-  "St Thomas Mosque|https://muslimhub.net/public/location/StThomas/?Settings=tv"
-  "Location 2|https://muslimhub.net/public/location/StThomas2/?Settings=tv"
-  "Location 3|https://muslimhub.net/public/location/StThomas3/?Settings=tv"
-  "Location 4|https://muslimhub.net/public/location/StThomas4/?Settings=tv"
-  "Location 5|https://muslimhub.net/public/location/StThomas5/?Settings=tv"
-)
+# ── Pick the kiosk location using location code ──────────────────────────────
+echo "Enter the location code for the kiosk URL."
+echo ""
+read -p "Enter location code: " location_code
 
-# Display options with short names
-for i in "${!options[@]}"; do
-  echo "$((i+1))) ${options[$i]%%|*}"
-done
+# Validate that a code was entered
+if [[ -z "$location_code" ]]; then
+  echo "Error: Location code cannot be empty"
+  exit 1
+fi
 
-read -p "Select the kiosk location (1-5): " selection
-KIOSK_URL=$(echo "${options[$((selection-1))]}" | cut -d'|' -f2)
+# ── Select display type ───────────────────────────────────────────────────────
+echo ""
+echo "Display type options:"
+echo ""
+read -p "Enter display type [tv]: " display_input
+
+# Set default to 'tv' if empty
+if [[ -z "$display_input" ]]; then
+  DISPLAY_CODE="tv"
+elif [[ "$display_input" == "custom" ]]; then
+  read -p "Enter custom display code: " custom_display
+  if [[ -z "$custom_display" ]]; then
+    echo "Error: Custom display code cannot be empty"
+    exit 1
+  fi
+  DISPLAY_CODE="$custom_display"
+else
+  DISPLAY_CODE="$display_input"
+fi
+
+# Build URL using the code and display type
+KIOSK_URL="https://muslimhub.net/public/location/${location_code}/?Settings=${DISPLAY_CODE}"
 
 # ── Select screen rotation ────────────────────────────────────────────────────
-PS3="Select screen rotation (1-3): "
-rotation_options=(
-  "Left (portrait - counter-clockwise)"
-  "Right (portrait - clockwise)"
-  "Normal (landscape - no rotation)"
-)
+echo ""
+echo "Screen rotation options:"
+echo "  left   - Portrait (counter-clockwise)"
+echo "  right  - Portrait (clockwise)"
+echo "  normal - Landscape (no rotation)"
+echo ""
+read -p "Enter rotation (left/right/normal): " rotation_input
 
-select rot_opt in "${rotation_options[@]}"; do
-  case $REPLY in
-    1) ROTATION="left"; break ;;
-    2) ROTATION="right"; break ;;
-    3) ROTATION="normal"; break ;;
-    *) echo "Invalid selection. Please try again." ;;
-  esac
-done
+case "$rotation_input" in
+  left|right|normal)
+    ROTATION="$rotation_input"
+    ;;
+  *)
+    echo "Error: Invalid rotation '$rotation_input'"
+    exit 1
+    ;;
+esac
 
 echo ""
+echo "Selected Location Code: $location_code"
+echo "Selected Display Type: $DISPLAY_CODE"
 echo "Selected URL: $KIOSK_URL"
 echo "Selected Rotation: $ROTATION"
 echo ""
@@ -111,45 +131,4 @@ EOF
 
 # Backup and create Openbox autostart script
 [ -e "/home/kiosk/.config/openbox/autostart" ] && \
-  mv /home/kiosk/.config/openbox/autostart /home/kiosk/.config/openbox/autostart.backup
-cat > /home/kiosk/.config/openbox/autostart << EOF
-#!/bin/bash
-# Hide mouse cursor after 0.1 seconds of inactivity
-unclutter -idle 0.1 -grab -root &
-
-while :
-do
-  # Rotate screen to selected orientation
-  xrandr -o $ROTATION
-  
-  # Disable power management and screen blanking
-  xset -dpms
-  xset s off
-  xset s noblank
-  
-  # Launch Chromium in kiosk mode
-  chromium \
-    --no-first-run \
-    --start-maximized \
-    --disable-translate \
-    --disable-infobars \
-    --disable-suggestions-service \
-    --disable-save-password-bubble \
-    --disable-session-crashed-bubble \
-    --autoplay-policy=no-user-gesture-required \
-    --incognito \
-    --kiosk "$KIOSK_URL"
-  
-  sleep 5
-done &
-EOF
-
-chmod +x /home/kiosk/.config/openbox/autostart
-
-echo ""
-echo "Setup complete!"
-echo "Configuration:"
-echo "  URL: $KIOSK_URL"
-echo "  Rotation: $ROTATION"
-echo ""
-fc-match
+  mv /home/kiosk/.config/openbox/autos
