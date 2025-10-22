@@ -3,7 +3,7 @@
 # ── Pick the kiosk URL ───────────────────────────────────────────────────────
 PS3="Select the kiosk location (1-5): "
 options=(
-  "Location 1|https://muslimhub.net/public/location/StThomas/?Settings=tv"
+  "St Thomas Mosque|https://muslimhub.net/public/location/StThomas/?Settings=tv"
   "Location 2|https://muslimhub.net/public/location/StThomas2/?Settings=tv"
   "Location 3|https://muslimhub.net/public/location/StThomas3/?Settings=tv"
   "Location 4|https://muslimhub.net/public/location/StThomas4/?Settings=tv"
