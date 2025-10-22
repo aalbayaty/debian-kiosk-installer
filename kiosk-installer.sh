@@ -11,7 +11,7 @@ apt-get install -y \
     openbox \
     lightdm \
     locales \
-    fontconfig
+    fontconfig \
     -y
 
 # Create Openbox config directory for kiosk user
@@ -20,52 +20,35 @@ mkdir -p /home/kiosk/.config/openbox
 # Remove DejaVu fonts to avoid conflicts
 apt-get purge -y fonts-dejavu*
 
-# Manually download and install Taha font from GitHub
-mkdir -p /usr/share/fonts/truetype/Taha
-cd /usr/share/fonts/truetype/Taha || exit
 
-wget -qO Taha.ttf \
-    https://github.com/aalbayaty/debian-kiosk-installer/raw/refs/heads/master/amiri_font/Taha.ttf
-chmod 644 Taha.ttf
+# ✅ تنزيل وتثبيت خط Arial يدوياً من GitHub
+mkdir -p /usr/share/fonts/truetype/arial
+cd /usr/share/fonts/truetype/arial
 
-# Update font cache
+# استخدم رابط مباشر من مستودع موثوق
+wget -qO arial.ttf \
+  https://raw.githubusercontent.com/kavin808/arial.ttf/master/arial.ttf
+chmod 644 arial.ttf
+
+# ✅ تحديث كاش الخطوط
 fc-cache -f -v
 
-# Set Taha as the preferred default font for sans-serif, serif, and monospace families
+# ✅ تعيين Arial كخط النظام الافتراضي
 mkdir -p /etc/fonts/conf.d
-cat > /etc/fonts/conf.d/60-Taha-prefer.conf << EOF
+cat > /etc/fonts/conf.d/60-arial-prefer.conf << "EOF"
 <?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
 <fontconfig>
-  <match target="pattern">
-    <test name="family" compare="contains">
-      <string>sans-serif</string>
-    </test>
-    <edit name="family" mode="assign" binding="strong">
-      <string>Taha</string>
-    </edit>
-  </match>
-  <match target="pattern">
-    <test name="family" compare="contains">
-      <string>serif</string>
-    </test>
-    <edit name="family" mode="assign" binding="strong">
-      <string>Taha</string>
-    </edit>
-  </match>
-  <match target="pattern">
-    <test name="family" compare="contains">
-      <string>monospace</string>
-    </test>
-    <edit name="family" mode="assign" binding="strong">
-      <string>Taha</string>
-    </edit>
-  </match>
+  <alias><family>sans-serif</family><prefer><family>Arial</family></prefer></alias>
+  <alias><family>serif</family><prefer><family>Arial</family></prefer></alias>
+  <alias><family>monospace</family><prefer><family>Arial</family></prefer></alias>
 </fontconfig>
 EOF
-
 # Update font cache again after config change
 fc-cache -f -v
+
+# Update font cache again after config change
+mkdir -p /home/kiosk/.config/openbox
 
 # Create kiosk group if it doesn't exist
 getent group kiosk >/dev/null || groupadd kiosk
