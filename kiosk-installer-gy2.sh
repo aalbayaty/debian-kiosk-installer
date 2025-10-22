@@ -31,10 +31,11 @@ id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash
 # rights
 chown -R kiosk:kiosk /home/kiosk
 
-# remove virtual consoles
+# Backup existing Xorg config if present and disable virtual console switching
 if [ -e "/etc/X11/xorg.conf" ]; then
   mv /etc/X11/xorg.conf /etc/X11/xorg.conf.backup
 fi
+
 cat > /etc/X11/xorg.conf << EOF
 Section "ServerFlags"
     Option "DontVTSwitch" "true"
@@ -54,6 +55,13 @@ cat > /etc/lightdm/lightdm.conf << EOF
 autologin-user=kiosk
 user-session=openbox
 EOF
+
+# Backup and create Openbox autostart script
+if [ -e "/home/kiosk/.config/openbox/autostart" ]; then
+  mv /home/kiosk/.config/openbox/autostart /home/kiosk/.config/openbox/autostart.backup
+fi
+
+cat > /home/kiosk/.config/openbox/autostart << EOF
 
 # create autostart
 if [ -e "/home/kiosk/.config/openbox/autostart" ]; then
