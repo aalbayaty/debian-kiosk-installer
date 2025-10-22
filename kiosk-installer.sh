@@ -10,7 +10,8 @@ apt-get install -y \
     chromium \
     openbox \
     lightdm \
-    locales 
+    locales \
+    fontconfig
 
 # Create Openbox config directory for kiosk user
 mkdir -p /home/kiosk/.config/openbox
