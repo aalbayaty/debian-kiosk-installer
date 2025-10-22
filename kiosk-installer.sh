@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 # ── Pick the kiosk location using location code ──────────────────────────────
 echo "Enter the location code for the muslimhub application."
 echo ""
@@ -8,6 +9,27 @@ read -p "Enter location code: " location_code
 # Validate that a code was entered
 if [[ -z "$location_code" ]]; then
   echo "Error: Location code cannot be empty"
+  exit 1
+fi
+
+# Validate the location code by checking the URL
+echo "Validating location code..."
+CHECK_URL="https://muslimhub.net/location/${location_code}"
+HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" "$CHECK_URL")
+
+if [[ "$HTTP_STATUS" == "200" ]]; then
+  echo "✓ Location code validated successfully."
+elif [[ "$HTTP_STATUS" == "204" ]]; then
+  echo "Error: Location not found (HTTP 204)"
+  echo "The location code '$location_code' does not exist."
+  exit 1
+elif [[ "$HTTP_STATUS" == "000" ]]; then
+  echo "Error: Unable to connect to muslimhub.net"
+  echo "Please check your internet connection."
+  exit 1
+else
+  echo "Error: Invalid location code (HTTP $HTTP_STATUS)"
+  echo "The location code '$location_code' is not valid."
   exit 1
 fi
 
