@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ── Pick the kiosk location using location code ──────────────────────────────
-echo "Enter the location code for the kiosk URL."
+echo "Enter the location code for the kiosk."
 echo ""
 read -p "Enter location code: " location_code
 
