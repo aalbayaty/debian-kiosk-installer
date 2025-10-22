@@ -178,4 +178,14 @@ echo "  Display Type: $DISPLAY_CODE"
 echo "  URL: $KIOSK_URL"
 echo "  Rotation: $ROTATION"
 echo ""
-fc-match
+fc-match    
+
+# Countdown with cancel option
+for i in {10..1}; do
+  echo -ne "Restarting in $i seconds... Press Ctrl+C to cancel\r"
+  sleep 1
+done
+
+echo ""
+echo "Restarting now..."
+reboot
