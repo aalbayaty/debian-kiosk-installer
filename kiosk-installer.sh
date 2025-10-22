@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # ── Pick the kiosk location using location code ──────────────────────────────
-echo "Enter the location code for the kiosk URL."
-echo "The URL will be: https://muslimhub.net/public/location/{CODE}/?Settings={DISPLAY}"
+echo "Enter the location code for the muslimhub application."
 echo ""
 read -p "Enter location code: " location_code
 
