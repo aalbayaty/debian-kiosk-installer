@@ -12,6 +12,7 @@ apt-get install -y \
     lightdm \
     locales \
     fontconfig
+    -y
 
 # Create Openbox config directory for kiosk user
 mkdir -p /home/kiosk/.config/openbox
