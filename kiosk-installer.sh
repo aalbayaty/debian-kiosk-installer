@@ -37,9 +37,7 @@ fi
 echo ""
 echo "Display type options (press enter if you're not sure):"
 echo "  tv      - TV display (default)"
-echo "  kiosk   - Kiosk display"
-echo "  mobile  - Mobile display"
-echo "  custom  - Enter custom display code"
+echo "  tvh     - TV display horizontal mode"
 echo ""
 read -p "Enter display type [tv]: " display_input
 
