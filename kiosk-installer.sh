@@ -13,7 +13,7 @@ fi
 
 # ── Select display type ───────────────────────────────────────────────────────
 echo ""
-echo "Display type options:"
+echo "Display type options (press enter if you're not sure):"
 echo "  tv      - TV display (default)"
 echo "  kiosk   - Kiosk display"
 echo "  mobile  - Mobile display"
