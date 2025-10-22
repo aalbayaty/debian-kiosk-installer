@@ -41,10 +41,14 @@ Section "ServerFlags"
 EndSection
 EOF
 
-# create config
+# Backup and create LightDM config for auto-login to kiosk user and openbox session
 if [ -e "/etc/lightdm/lightdm.conf" ]; then
   mv /etc/lightdm/lightdm.conf /etc/lightdm/lightdm.conf.backup
+else
+  mkdir -p /etc/lightdm/
+  touch /etc/lightdm/lightdm.conf
 fi
+
 cat > /etc/lightdm/lightdm.conf << EOF
 [SeatDefaults]
 autologin-user=kiosk
