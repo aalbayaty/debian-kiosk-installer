@@ -1,41 +1,34 @@
 #!/bin/bash
-
-# be new
+# Update package lists
 apt-get update
 
-# get software
-apt-get install \
-	unclutter \
+# Install required packages
+apt-get install -y \
+    unclutter \
     xorg \
     chromium \
     openbox \
     lightdm \
     locales \
-    -y
+    fontconfig
 
-# timedatectl set-timezone America/Guyana
-  add-apt-repository multiverse
+# Create Openbox config directory for kiosk user
+mkdir -p /home/kiosk/.config/openbox
 
-  echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
-  apt-get install ttf-mscorefonts-installer -y
-
-
-# ✅ حذف خطوط DejaVu
+# Remove DejaVu fonts to avoid conflicts
 apt-get purge -y fonts-dejavu*
 
-# ✅ تنزيل وتثبيت خط Arial يدوياً من GitHub
+# ✅ Download and install Arial font manually from GitHub
 mkdir -p /usr/share/fonts/truetype/arial
 cd /usr/share/fonts/truetype/arial
-
-# استخدم رابط مباشر من مستودع موثوق
 wget -qO arial.ttf \
   https://raw.githubusercontent.com/kavin808/arial.ttf/master/arial.ttf
 chmod 644 arial.ttf
 
-# ✅ تحديث كاش الخطوط
+# ✅ Update font cache
 fc-cache -f -v
 
-# ✅ تعيين Arial كخط النظام الافتراضي
+# ✅ Set Arial as the system default font
 mkdir -p /etc/fonts/conf.d
 cat > /etc/fonts/conf.d/60-arial-prefer.conf << "EOF"
 <?xml version="1.0"?>
@@ -48,32 +41,26 @@ cat > /etc/fonts/conf.d/60-arial-prefer.conf << "EOF"
 EOF
 fc-cache -f -v
 
-# dir
-mkdir -p /home/kiosk/.config/openbox
+# Create kiosk group if it doesn't exist
+getent group kiosk >/dev/null || groupadd kiosk
 
-# create group
-groupadd kiosk
+# Create kiosk user if it doesn't exist
+id -u kiosk &>/dev/null || useradd -m -g kiosk -s /bin/bash kiosk
 
-# create user if not exists
-id -u kiosk &>/dev/null || useradd -m kiosk -g kiosk -s /bin/bash 
-
-# rights
+# Set ownership of kiosk home
 chown -R kiosk:kiosk /home/kiosk
 
-# remove virtual consoles
-if [ -e "/etc/X11/xorg.conf" ]; then
-  mv /etc/X11/xorg.conf /etc/X11/xorg.conf.backup
-fi
+# Backup existing Xorg config if present and disable virtual-console switching
+[ -e "/etc/X11/xorg.conf" ] && mv /etc/X11/xorg.conf /etc/X11/xorg.conf.backup
 cat > /etc/X11/xorg.conf << EOF
 Section "ServerFlags"
     Option "DontVTSwitch" "true"
 EndSection
 EOF
 
-# create config
-if [ -e "/etc/lightdm/lightdm.conf" ]; then
-  mv /etc/lightdm/lightdm.conf /etc/lightdm/lightdm.conf.backup
-fi
+# Backup and create LightDM config for auto-login
+[ -e "/etc/lightdm/lightdm.conf" ] && mv /etc/lightdm/lightdm.conf /etc/lightdm/lightdm.conf.backup
+mkdir -p /etc/lightdm
 cat > /etc/lightdm/lightdm.conf << EOF
 [SeatDefaults]
 autologin-user=kiosk
