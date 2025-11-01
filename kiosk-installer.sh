@@ -264,14 +264,22 @@ echo "Rotation: $ROTATION"
 echo ""
 fc-match
 
-# Countdown with whiptail
+# Countdown with whiptail and cancel option
+(
 for i in {10..1}; do
   echo "XXX"
   echo $((100 - i * 10))
-  echo "System will restart in $i seconds...\n\nURL: $KIOSK_URL\n\nPress Ctrl+C to cancel"
+  echo "System will restart in $i seconds...\n\nURL: $KIOSK_URL\n\nPress Ctrl+C or click Cancel to abort"
   echo "XXX"
   sleep 1
-done | whiptail --gauge "Preparing to restart..." 10 70 0
+done
+) | whiptail --gauge "Preparing to restart..." 10 70 0
 
-echo "Restarting now..."
-systemctl reboot
+# Check if user cancelled (whiptail returns non-zero on cancel)
+if [ $? -eq 0 ]; then
+  echo "Restarting now..."
+  systemctl reboot
+else
+  whiptail --msgbox "Restart cancelled.\n\nYou can manually restart later with:\nsudo systemctl reboot" 10 50
+  exit 0
+fi
