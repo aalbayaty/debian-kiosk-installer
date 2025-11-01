@@ -96,7 +96,10 @@ apt-get install -y \
     openbox \
     lightdm \
     locales \
-    fontconfig
+    fontconfig \
+    zenity \
+    network-manager \
+    xterm
 
 # Create Openbox config directory for kiosk user
 mkdir -p /home/kiosk/.config/openbox
@@ -156,10 +159,39 @@ EOF
 # Backup and create Openbox autostart script
 [ -e "/home/kiosk/.config/openbox/autostart" ] && \
   mv /home/kiosk/.config/openbox/autostart /home/kiosk/.config/openbox/autostart.backup
-cat > /home/kiosk/.config/openbox/autostart << EOF
+cat > /home/kiosk/.config/openbox/autostart << 'EOF'
 #!/bin/bash
 # Hide mouse cursor after 0.1 seconds of inactivity
 unclutter -idle 0.1 -grab -root &
+
+# Network configuration prompt
+timeout 10 zenity --question \
+  --title="Network Setup" \
+  --text="Click OK to configure network connection\n\nAuto-continuing in 10 seconds..." \
+  --ok-label="Configure Network" \
+  --cancel-label="Skip" \
+  --width=400 \
+  --height=150
+
+if [ $? -eq 0 ]; then
+  # User clicked OK - ask which type of network
+  NETWORK_TYPE=$(zenity --list \
+    --title="Network Type" \
+    --text="Select your network connection type:" \
+    --column="Option" \
+    "WiFi" \
+    "Ethernet" \
+    --width=400 \
+    --height=250)
+  
+  if [ "$NETWORK_TYPE" = "WiFi" ]; then
+    # Launch nmtui for WiFi configuration
+    xterm -fullscreen -e nmtui
+  elif [ "$NETWORK_TYPE" = "Ethernet" ]; then
+    # Launch nmtui for Ethernet configuration
+    xterm -fullscreen -e nmtui
+  fi
+fi
 
 while :
 do
