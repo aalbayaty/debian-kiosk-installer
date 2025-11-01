@@ -6,37 +6,34 @@ if ! command -v curl &> /dev/null; then
     apt-get install -y curl > /dev/null 2>&1
     
     if ! command -v curl &> /dev/null; then
-        zenity --error --text="Failed to install curl" --width=300
+        echo "Error: Failed to install curl"
         exit 1
     fi
 fi
 
-# ── Check and install zenity if needed ────────────────────────────────────────
-if ! command -v zenity &> /dev/null; then
+# ── Check and install whiptail if needed ──────────────────────────────────────
+if ! command -v whiptail &> /dev/null; then
     apt-get update > /dev/null 2>&1
-    apt-get install -y zenity > /dev/null 2>&1
+    apt-get install -y whiptail > /dev/null 2>&1
     
-    if ! command -v zenity &> /dev/null; then
-        echo "Error: Failed to install zenity"
+    if ! command -v whiptail &> /dev/null; then
+        echo "Error: Failed to install whiptail"
         exit 1
     fi
 fi
 
 # ── Pick the kiosk location using location code ──────────────────────────────
-location_code=$(zenity --entry \
-  --title="MuslimHub Kiosk Setup" \
-  --text="Enter the location code for the muslimhub application:" \
-  --width=400)
+location_code=$(whiptail --inputbox "Enter the location code for the muslimhub application:" 10 60 3>&1 1>&2 2>&3)
 
 # Check if user cancelled
 if [ $? -ne 0 ]; then
-    zenity --info --text="Setup cancelled" --width=300
+    whiptail --msgbox "Setup cancelled" 8 40
     exit 0
 fi
 
 # Validate that a code was entered
 if [[ -z "$location_code" ]]; then
-  zenity --error --text="Location code cannot be empty" --width=300
+  whiptail --msgbox "Error: Location code cannot be empty" 8 40
   exit 1
 fi
 
@@ -45,33 +42,28 @@ CHECK_URL="https://muslimhub.net/location/${location_code}"
 HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" "$CHECK_URL")
 
 if [[ "$HTTP_STATUS" == "200" ]]; then
-  zenity --info --text="✓ Location code validated successfully" --timeout=2 --width=300
+  whiptail --msgbox "✓ Location code validated successfully" 8 40
 elif [[ "$HTTP_STATUS" == "204" ]]; then
-  zenity --error --text="Location not found (HTTP 204)\n\nThe location code '$location_code' does not exist." --width=400
+  whiptail --msgbox "Error: Location not found (HTTP 204)\n\nThe location code '$location_code' does not exist." 10 50
   exit 1
 elif [[ "$HTTP_STATUS" == "000" ]]; then
-  zenity --error --text="Unable to connect to muslimhub.net\n\nPlease check your internet connection." --width=400
+  whiptail --msgbox "Error: Unable to connect to muslimhub.net\n\nPlease check your internet connection." 10 50
   exit 1
 else
-  zenity --error --text="Invalid location code (HTTP $HTTP_STATUS)\n\nThe location code '$location_code' is not valid." --width=400
+  whiptail --msgbox "Error: Invalid location code (HTTP $HTTP_STATUS)\n\nThe location code '$location_code' is not valid." 10 50
   exit 1
 fi
 
 # ── Select display type ───────────────────────────────────────────────────────
-display_input=$(zenity --list \
-  --title="Display Type" \
-  --text="Select display type:" \
-  --column="Option" \
-  --column="Description" \
+display_input=$(whiptail --menu "Select display type:" 15 60 3 \
   "tv" "TV display (default)" \
   "tvh" "TV display horizontal mode" \
   "custom" "Enter custom display code" \
-  --width=500 \
-  --height=300)
+  3>&1 1>&2 2>&3)
 
 # Check if user cancelled
 if [ $? -ne 0 ]; then
-    zenity --info --text="Setup cancelled" --width=300
+    whiptail --msgbox "Setup cancelled" 8 40
     exit 0
 fi
 
@@ -79,13 +71,10 @@ fi
 if [[ -z "$display_input" ]]; then
   DISPLAY_CODE="tv"
 elif [[ "$display_input" == "custom" ]]; then
-  custom_display=$(zenity --entry \
-    --title="Custom Display Code" \
-    --text="Enter custom display code:" \
-    --width=400)
+  custom_display=$(whiptail --inputbox "Enter custom display code:" 10 60 3>&1 1>&2 2>&3)
   
   if [[ -z "$custom_display" ]]; then
-    zenity --error --text="Custom display code cannot be empty" --width=300
+    whiptail --msgbox "Error: Custom display code cannot be empty" 8 40
     exit 1
   fi
   DISPLAY_CODE="$custom_display"
@@ -97,20 +86,15 @@ fi
 KIOSK_URL="https://muslimhub.net/public/location/${location_code}/?Settings=${DISPLAY_CODE}"
 
 # ── Select screen rotation ────────────────────────────────────────────────────
-ROTATION=$(zenity --list \
-  --title="Screen Rotation" \
-  --text="Select screen rotation:" \
-  --column="Option" \
-  --column="Description" \
+ROTATION=$(whiptail --menu "Select screen rotation:" 15 60 3 \
   "normal" "Landscape (no rotation)" \
   "left" "Portrait (counter-clockwise)" \
   "right" "Portrait (clockwise)" \
-  --width=500 \
-  --height=300)
+  3>&1 1>&2 2>&3)
 
 # Check if user cancelled
 if [ $? -ne 0 ]; then
-    zenity --info --text="Setup cancelled" --width=300
+    whiptail --msgbox "Setup cancelled" 8 40
     exit 0
 fi
 
@@ -119,17 +103,13 @@ case "$ROTATION" in
   left|right|normal)
     ;;
   *)
-    zenity --error --text="Invalid rotation '$ROTATION'" --width=300
+    whiptail --msgbox "Error: Invalid rotation '$ROTATION'" 8 40
     exit 1
     ;;
 esac
 
 # Show configuration summary
-zenity --info \
-  --title="Configuration Summary" \
-  --text="<b>Selected Configuration:</b>\n\n<b>URL:</b> $KIOSK_URL\n\n<b>Display Type:</b> $DISPLAY_CODE\n\n<b>Rotation:</b> $ROTATION" \
-  --width=500 \
-  --height=250
+whiptail --msgbox "Selected Configuration:\n\nURL: $KIOSK_URL\n\nDisplay Type: $DISPLAY_CODE\n\nRotation: $ROTATION" 15 70
 
 # ───────────────────────────────────────────────────────────────────────────────
 # Update package lists
@@ -144,6 +124,7 @@ apt-get install -y \
     lightdm \
     locales \
     fontconfig \
+    whiptail \
     zenity \
     network-manager \
     network-manager-gnome \
@@ -279,21 +260,16 @@ echo "Setup complete!"
 echo "URL: $KIOSK_URL"
 echo "Rotation: $ROTATION"
 echo ""
-fc-match    
+fc-match
 
-# Countdown with cancel option using zenity
-(
+# Countdown with whiptail
 for i in {10..1}; do
-  echo "# Restarting in $i seconds..."
+  echo "XXX"
   echo $((100 - i * 10))
+  echo "System will restart in $i seconds...\n\nURL: $KIOSK_URL\n\nPress Ctrl+C to cancel"
+  echo "XXX"
   sleep 1
-done
-) | zenity --progress \
-  --title="Setup Complete" \
-  --text="System will restart soon...\nURL: $KIOSK_URL" \
-  --percentage=0 \
-  --auto-close \
-  --width=400
+done | whiptail --gauge "Preparing to restart..." 10 70 0
 
 echo "Restarting now..."
-reboot
+systemctl reboot
