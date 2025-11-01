@@ -109,7 +109,7 @@ xset s noblank
     --disable-session-crashed-bubble \
     --autoplay-policy=no-user-gesture-required \
     --incognito \
-    --kiosk "https://muslimhub.net/public/location/wide/StThomas/?Settings=TVh"
+    --kiosk "https://muslimhub.net/public/location/wide/hyatt/?Settings=TVh"
   sleep 5
 done &
 EOF
