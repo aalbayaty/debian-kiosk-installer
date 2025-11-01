@@ -246,6 +246,8 @@ do
     --disable-save-password-bubble \
     --disable-session-crashed-bubble \
     --autoplay-policy=no-user-gesture-required \
+    --password-store=basic \
+    --disable-features=PasswordManager \
     --incognito \
     --kiosk "$KIOSK_URL"
   
