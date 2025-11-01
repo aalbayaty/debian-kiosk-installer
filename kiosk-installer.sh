@@ -6,58 +6,86 @@ if ! command -v curl &> /dev/null; then
     apt-get install -y curl > /dev/null 2>&1
     
     if ! command -v curl &> /dev/null; then
-        echo "Error: Failed to install curl"
+        zenity --error --text="Failed to install curl" --width=300
+        exit 1
+    fi
+fi
+
+# ── Check and install zenity if needed ────────────────────────────────────────
+if ! command -v zenity &> /dev/null; then
+    apt-get update > /dev/null 2>&1
+    apt-get install -y zenity > /dev/null 2>&1
+    
+    if ! command -v zenity &> /dev/null; then
+        echo "Error: Failed to install zenity"
         exit 1
     fi
 fi
 
 # ── Pick the kiosk location using location code ──────────────────────────────
-echo "Enter the location code for the muslimhub application."
-echo ""
-read -p "Enter location code: " location_code
+location_code=$(zenity --entry \
+  --title="MuslimHub Kiosk Setup" \
+  --text="Enter the location code for the muslimhub application:" \
+  --width=400)
+
+# Check if user cancelled
+if [ $? -ne 0 ]; then
+    zenity --info --text="Setup cancelled" --width=300
+    exit 0
+fi
 
 # Validate that a code was entered
 if [[ -z "$location_code" ]]; then
-  echo "Error: Location code cannot be empty"
+  zenity --error --text="Location code cannot be empty" --width=300
   exit 1
 fi
 
 # Validate the location code by checking the URL
-echo "Validating location code..."
 CHECK_URL="https://muslimhub.net/location/${location_code}"
 HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" "$CHECK_URL")
 
 if [[ "$HTTP_STATUS" == "200" ]]; then
-  echo "✓ Location code validated successfully."
+  zenity --info --text="✓ Location code validated successfully" --timeout=2 --width=300
 elif [[ "$HTTP_STATUS" == "204" ]]; then
-  echo "Error: Location not found (HTTP 204)"
-  echo "The location code '$location_code' does not exist."
+  zenity --error --text="Location not found (HTTP 204)\n\nThe location code '$location_code' does not exist." --width=400
   exit 1
 elif [[ "$HTTP_STATUS" == "000" ]]; then
-  echo "Error: Unable to connect to muslimhub.net"
-  echo "Please check your internet connection."
+  zenity --error --text="Unable to connect to muslimhub.net\n\nPlease check your internet connection." --width=400
   exit 1
 else
-  echo "Error: Invalid location code (HTTP $HTTP_STATUS)"
-  echo "The location code '$location_code' is not valid."
+  zenity --error --text="Invalid location code (HTTP $HTTP_STATUS)\n\nThe location code '$location_code' is not valid." --width=400
   exit 1
 fi
 
 # ── Select display type ───────────────────────────────────────────────────────
-echo ""
-echo "Display type options (press enter if you're not sure):"
-echo "  tv      - TV display (default)"
-echo "  tvh     - TV display horizontal mode"
-echo ""
-read -p "Enter display type [tv]: " display_input
+display_input=$(zenity --list \
+  --title="Display Type" \
+  --text="Select display type:" \
+  --column="Option" \
+  --column="Description" \
+  "tv" "TV display (default)" \
+  "tvh" "TV display horizontal mode" \
+  "custom" "Enter custom display code" \
+  --width=500 \
+  --height=300)
+
+# Check if user cancelled
+if [ $? -ne 0 ]; then
+    zenity --info --text="Setup cancelled" --width=300
+    exit 0
+fi
 
 # Set default to 'tv' if empty
 if [[ -z "$display_input" ]]; then
   DISPLAY_CODE="tv"
 elif [[ "$display_input" == "custom" ]]; then
-  read -p "Enter custom display code: " custom_display
+  custom_display=$(zenity --entry \
+    --title="Custom Display Code" \
+    --text="Enter custom display code:" \
+    --width=400)
+  
   if [[ -z "$custom_display" ]]; then
-    echo "Error: Custom display code cannot be empty"
+    zenity --error --text="Custom display code cannot be empty" --width=300
     exit 1
   fi
   DISPLAY_CODE="$custom_display"
@@ -69,30 +97,39 @@ fi
 KIOSK_URL="https://muslimhub.net/public/location/${location_code}/?Settings=${DISPLAY_CODE}"
 
 # ── Select screen rotation ────────────────────────────────────────────────────
-echo ""
-echo "Screen rotation options:"
-echo "  left   - Portrait (counter-clockwise)"
-echo "  right  - Portrait (clockwise)"
-echo "  normal - Landscape (no rotation)"
-echo ""
-read -p "Enter rotation (left/right/normal): " rotation_input
+ROTATION=$(zenity --list \
+  --title="Screen Rotation" \
+  --text="Select screen rotation:" \
+  --column="Option" \
+  --column="Description" \
+  "normal" "Landscape (no rotation)" \
+  "left" "Portrait (counter-clockwise)" \
+  "right" "Portrait (clockwise)" \
+  --width=500 \
+  --height=300)
 
-case "$rotation_input" in
+# Check if user cancelled
+if [ $? -ne 0 ]; then
+    zenity --info --text="Setup cancelled" --width=300
+    exit 0
+fi
+
+# Validate rotation
+case "$ROTATION" in
   left|right|normal)
-    ROTATION="$rotation_input"
     ;;
   *)
-    echo "Error: Invalid rotation '$rotation_input'"
+    zenity --error --text="Invalid rotation '$ROTATION'" --width=300
     exit 1
     ;;
 esac
 
-echo ""
-echo "Selected Location Code: $location_code"
-echo "Selected Display Type: $DISPLAY_CODE"
-echo "Selected URL: $KIOSK_URL"
-echo "Selected Rotation: $ROTATION"
-echo ""
+# Show configuration summary
+zenity --info \
+  --title="Configuration Summary" \
+  --text="<b>Selected Configuration:</b>\n\n<b>URL:</b> $KIOSK_URL\n\n<b>Display Type:</b> $DISPLAY_CODE\n\n<b>Rotation:</b> $ROTATION" \
+  --width=500 \
+  --height=250
 
 # ───────────────────────────────────────────────────────────────────────────────
 # Update package lists
@@ -109,6 +146,7 @@ apt-get install -y \
     fontconfig \
     zenity \
     network-manager \
+    network-manager-gnome \
     xterm
 
 # Create Openbox config directory for kiosk user
@@ -169,7 +207,7 @@ EOF
 # Backup and create Openbox autostart script
 [ -e "/home/kiosk/.config/openbox/autostart" ] && \
   mv /home/kiosk/.config/openbox/autostart /home/kiosk/.config/openbox/autostart.backup
-cat > /home/kiosk/.config/openbox/autostart << 'EOF'
+cat > /home/kiosk/.config/openbox/autostart << EOF
 #!/bin/bash
 # Hide mouse cursor after 0.1 seconds of inactivity
 unclutter -idle 0.1 -grab -root &
@@ -183,9 +221,9 @@ timeout 10 zenity --question \
   --width=400 \
   --height=150
 
-if [ $? -eq 0 ]; then
+if [ \$? -eq 0 ]; then
   # User clicked OK - ask which type of network
-  NETWORK_TYPE=$(zenity --list \
+  NETWORK_TYPE=\$(zenity --list \
     --title="Network Type" \
     --text="Select your network connection type:" \
     --column="Option" \
@@ -194,12 +232,16 @@ if [ $? -eq 0 ]; then
     --width=400 \
     --height=250)
   
-  if [ "$NETWORK_TYPE" = "WiFi" ]; then
-    # Launch nmtui for WiFi configuration
-    xterm -fullscreen -e nmtui
-  elif [ "$NETWORK_TYPE" = "Ethernet" ]; then
-    # Launch nmtui for Ethernet configuration
-    xterm -fullscreen -e nmtui
+  if [ "\$NETWORK_TYPE" = "WiFi" ] || [ "\$NETWORK_TYPE" = "Ethernet" ]; then
+    # Launch GUI network manager
+    nm-connection-editor &
+    
+    # Wait for network manager window to close or timeout
+    zenity --info \
+      --title="Network Configuration" \
+      --text="Click OK when finished configuring network" \
+      --timeout=120 \
+      --width=400
   fi
 fi
 
@@ -234,20 +276,24 @@ chmod +x /home/kiosk/.config/openbox/autostart
 
 echo ""
 echo "Setup complete!"
-echo "Configuration:"
-echo "  Location Code: $location_code"
-echo "  Display Type: $DISPLAY_CODE"
-echo "  URL: $KIOSK_URL"
-echo "  Rotation: $ROTATION"
+echo "URL: $KIOSK_URL"
+echo "Rotation: $ROTATION"
 echo ""
 fc-match    
 
-# Countdown with cancel option
+# Countdown with cancel option using zenity
+(
 for i in {10..1}; do
-  echo -ne "Restarting in $i seconds... Press Ctrl+C to cancel\r"
+  echo "# Restarting in $i seconds..."
+  echo $((100 - i * 10))
   sleep 1
 done
+) | zenity --progress \
+  --title="Setup Complete" \
+  --text="System will restart soon...\nURL: $KIOSK_URL" \
+  --percentage=0 \
+  --auto-close \
+  --width=400
 
-echo ""
 echo "Restarting now..."
 reboot
