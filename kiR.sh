@@ -101,7 +101,7 @@ do
     --disable-session-crashed-bubble \
     --autoplay-policy=no-user-gesture-required \
     --incognito \
-    --kiosk "https://muslimhub.net/public/location/StThomas/?Settings=tv"
+    --kiosk "https://muslimhub.net/public/location/hyatt/?Settings=tv"
 
   sleep 5
 done &
