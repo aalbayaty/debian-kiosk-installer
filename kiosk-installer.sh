@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# ── Check and install curl if needed ──────────────────────────────────────────
+if ! command -v curl &> /dev/null; then
+    apt-get update > /dev/null 2>&1
+    apt-get install -y curl > /dev/null 2>&1
+    
+    if ! command -v curl &> /dev/null; then
+        echo "Error: Failed to install curl"
+        exit 1
+    fi
+fi
 
 # ── Pick the kiosk location using location code ──────────────────────────────
 echo "Enter the location code for the muslimhub application."
