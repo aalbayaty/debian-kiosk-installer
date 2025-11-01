@@ -22,6 +22,14 @@ if ! command -v whiptail &> /dev/null; then
     fi
 fi
 
+# ── Check internet connectivity ──────────────────────────────────────────────
+whiptail --msgbox "Checking internet connection..." 8 40
+if ! ping -c 2 -W 5 8.8.8.8 > /dev/null 2>&1; then
+  whiptail --msgbox "Error: No internet connection detected.\n\nPlease connect to the internet and try again." 10 50
+  exit 1
+fi
+whiptail --msgbox "✓ Internet connection verified" 8 40
+
 # ── Pick the kiosk location using location code ──────────────────────────────
 location_code=$(whiptail --inputbox "Enter the location code for the muslimhub application:" 10 60 3>&1 1>&2 2>&3)
 
@@ -193,16 +201,25 @@ cat > /home/kiosk/.config/openbox/autostart << EOF
 # Hide mouse cursor after 0.1 seconds of inactivity
 unclutter -idle 0.1 -grab -root &
 
-# Network configuration prompt
-timeout 10 zenity --question \
-  --title="Network Setup" \
-  --text="Click OK to configure network connection\n\nAuto-continuing in 10 seconds..." \
-  --ok-label="Configure Network" \
-  --cancel-label="Skip" \
-  --width=400 \
-  --height=150
+# Network configuration prompt with countdown
+CONFIGURE_NETWORK=0
+for i in {10..1}; do
+  zenity --question \
+    --title="Network Setup" \
+    --text="Click OK to configure network connection\n\nAuto-continuing in \$i seconds..." \
+    --ok-label="Configure Network" \
+    --cancel-label="Skip" \
+    --timeout=1 \
+    --width=400 \
+    --height=150 2>/dev/null
 
-if [ \$? -eq 0 ]; then
+  if [ \$? -eq 0 ]; then
+    CONFIGURE_NETWORK=1
+    break
+  fi
+done
+
+if [ \$CONFIGURE_NETWORK -eq 1 ]; then
   # User clicked OK - ask which type of network
   NETWORK_TYPE=\$(zenity --list \
     --title="Network Type" \
@@ -213,18 +230,28 @@ if [ \$? -eq 0 ]; then
     --width=400 \
     --height=250)
   
-  if [ "\$NETWORK_TYPE" = "WiFi" ] || [ "\$NETWORK_TYPE" = "Ethernet" ]; then
-    # Launch GUI network manager
-    nm-connection-editor &
-    
-    # Wait for network manager window to close or timeout
+  if [ "\$NETWORK_TYPE" = "WiFi" ]; then
+    # Launch simple WiFi configuration with nmtui
+    xterm -maximized -e nmtui-connect
+  elif [ "\$NETWORK_TYPE" = "Ethernet" ]; then
     zenity --info \
-      --title="Network Configuration" \
-      --text="Click OK when finished configuring network" \
-      --timeout=120 \
+      --title="Network Status" \
+      --text="Ethernet connection detected - no configuration needed" \
+      --timeout=5 \
       --width=400
   fi
 fi
+
+# Wait for internet connection before launching kiosk
+while ! ping -c 1 -W 2 8.8.8.8 > /dev/null 2>&1; do
+  for i in {10..1}; do
+    zenity --warning \
+      --title="No Internet Connection" \
+      --text="Waiting for internet connection...\n\nPlease connect to network.\n\nRetrying in \$i seconds..." \
+      --timeout=1 \
+      --width=400 2>/dev/null
+  done
+done
 
 while :
 do
