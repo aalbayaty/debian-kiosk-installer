@@ -204,7 +204,7 @@ unclutter -idle 0.1 -grab -root &
 # Network configuration prompt with 10-second timeout
 zenity --question \
   --title="Network Setup" \
-  --text="Click OK to configure network connection\n\nAuto-continuing soon..." \
+  --text="Click OK to configure network connection\n\nSkipping in a moment..." \
   --ok-label="Configure Network" \
   --cancel-label="Skip" \
   --timeout=10 \
