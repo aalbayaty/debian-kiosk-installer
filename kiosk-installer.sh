@@ -201,25 +201,17 @@ cat > /home/kiosk/.config/openbox/autostart << EOF
 # Hide mouse cursor after 0.1 seconds of inactivity
 unclutter -idle 0.1 -grab -root &
 
-# Network configuration prompt with countdown
-CONFIGURE_NETWORK=0
-for i in {10..1}; do
-  zenity --question \
-    --title="Network Setup" \
-    --text="Click OK to configure network connection\n\nAuto-continuing in \$i seconds..." \
-    --ok-label="Configure Network" \
-    --cancel-label="Skip" \
-    --timeout=1 \
-    --width=400 \
-    --height=150 2>/dev/null
+# Network configuration prompt with 10-second timeout
+zenity --question \
+  --title="Network Setup" \
+  --text="Click OK to configure network connection\n\nAuto-continuing soon..." \
+  --ok-label="Configure Network" \
+  --cancel-label="Skip" \
+  --timeout=10 \
+  --width=400 \
+  --height=150 2>/dev/null
 
-  if [ \$? -eq 0 ]; then
-    CONFIGURE_NETWORK=1
-    break
-  fi
-done
-
-if [ \$CONFIGURE_NETWORK -eq 1 ]; then
+if [ \$? -eq 0 ]; then
   # User clicked OK - ask which type of network
   NETWORK_TYPE=\$(zenity --list \
     --title="Network Type" \
@@ -241,17 +233,6 @@ if [ \$CONFIGURE_NETWORK -eq 1 ]; then
       --width=400
   fi
 fi
-
-# Wait for internet connection before launching kiosk
-while ! ping -c 1 -W 2 8.8.8.8 > /dev/null 2>&1; do
-  for i in {10..1}; do
-    zenity --warning \
-      --title="No Internet Connection" \
-      --text="Waiting for internet connection...\n\nPlease connect to network.\n\nRetrying in \$i seconds..." \
-      --timeout=1 \
-      --width=400 2>/dev/null
-  done
-done
 
 while :
 do
