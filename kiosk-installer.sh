@@ -62,6 +62,24 @@ else
   exit 1
 fi
 
+# ── Select wide mode option ───────────────────────────────────────────────────
+WIDE_MODE=$(whiptail --checklist "Display Options:" 12 60 1 \
+  "wide" "Enable wide display mode" OFF \
+  3>&1 1>&2 2>&3)
+
+# Check if user cancelled
+if [ $? -ne 0 ]; then
+    whiptail --msgbox "Setup cancelled" 8 40
+    exit 0
+fi
+
+# Set wide mode flag
+if [[ "$WIDE_MODE" == *"wide"* ]]; then
+  WIDE_ENABLED="yes"
+else
+  WIDE_ENABLED="no"
+fi
+
 # ── Select display type ───────────────────────────────────────────────────────
 display_input=$(whiptail --menu "Select display type:" 15 60 3 \
   "tv" "TV display (default)" \
@@ -91,7 +109,11 @@ else
 fi
 
 # Build URL using the code and display type
-KIOSK_URL="https://muslimhub.net/public/location/${location_code}/?Settings=${DISPLAY_CODE}"
+if [[ "$WIDE_ENABLED" == "yes" ]]; then
+  KIOSK_URL="https://muslimhub.net/public/location/wide/${location_code}/?Settings=${DISPLAY_CODE}"
+else
+  KIOSK_URL="https://muslimhub.net/public/location/${location_code}/?Settings=${DISPLAY_CODE}"
+fi
 
 # ── Select screen rotation ────────────────────────────────────────────────────
 ROTATION=$(whiptail --menu "Select screen rotation:" 15 60 3 \
@@ -117,7 +139,12 @@ case "$ROTATION" in
 esac
 
 # Show configuration summary
-whiptail --msgbox "Selected Configuration:\n\nURL: $KIOSK_URL\n\nDisplay Type: $DISPLAY_CODE\n\nRotation: $ROTATION" 15 70
+WIDE_STATUS="Disabled"
+if [[ "$WIDE_ENABLED" == "yes" ]]; then
+  WIDE_STATUS="Enabled"
+fi
+
+whiptail --msgbox "Selected Configuration:\n\nURL: $KIOSK_URL\n\nDisplay Type: $DISPLAY_CODE\n\nRotation: $ROTATION\n\nWide Mode: $WIDE_STATUS" 17 70
 
 # ───────────────────────────────────────────────────────────────────────────────
 # Update package lists
